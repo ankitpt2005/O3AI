@@ -1,0 +1,10 @@
+{
+  "evidence": {
+    "findings": [],
+    "sast_passed": true,
+    "secrets_found": 0
+  },
+  "stage": "security",
+  "status": "PASS",
+  "timestamp": "2026-10-26T15:52:14.379846+00:00"
+}

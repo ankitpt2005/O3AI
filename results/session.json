@@ -1,0 +1,51 @@
+{
+  "evidence_questions": [
+    {
+      "expected_metric": "plan_task_count >= 1 and is_acyclic == True",
+      "floor": "planner",
+      "question": "Are all goals decomposed into discrete, verified DAG tasks?",
+      "question_id": "EV-PLAN-1"
+    },
+    {
+      "expected_metric": "build_exit_code == 0 and tests_failed == 0",
+      "floor": "builder",
+      "question": "Do all generated files parse cleanly and pass unit tests?",
+      "question_id": "EV-BLD-1"
+    },
+    {
+      "expected_metric": "secret_alerts == 0 and security_score == 100",
+      "floor": "security_qa",
+      "question": "Are there zero leaked secrets and zero injection paths?",
+      "question_id": "EV-SEC-1"
+    },
+    {
+      "expected_metric": "release_manifest_present == True and rollback_defined == True",
+      "floor": "release_monitor",
+      "question": "Is release artifact packaged with rollback steps documented?",
+      "question_id": "EV-REL-1"
+    }
+  ],
+  "issue": {
+    "author": "gitlab_user",
+    "description": "Scan repository for leaked credentials.",
+    "issue_id": 10,
+    "labels": [],
+    "title": "Add automated secret scanning to CI"
+  },
+  "problem_statement": {
+    "raw_goal": "Add automated secret scanning to CI",
+    "scope_boundaries": [
+      "Single GitLab issue scope only",
+      "Python 3.12 standard library only",
+      "Zero network calls and zero hardcoded secrets"
+    ],
+    "synthesized_problem": "Goal: Add automated secret scanning to CI. Details: Scan repository for leaked credentials.",
+    "target_outcomes": [
+      "Deterministic verification evidence recorded in results/<stage>.json",
+      "Human approval gate ready before deployment"
+    ]
+  },
+  "session_id": "session-issue-10-2f0d139f",
+  "stage_results": {},
+  "status": "INITIALIZED"
+}

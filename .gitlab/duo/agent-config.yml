@@ -1,0 +1,18 @@
+# Project-level agent runtime configuration for GitLab Duo custom flows
+# Documentation: https://docs.gitlab.com/ee/user/gitlab_duo/agent_config.html
+
+image: python:3.12-slim
+
+setup_script:
+  - python --version
+  - python -m unittest discover -s tests -p "test_*.py" -v
+
+network_policy:
+  allowed_domains:
+    - "gitlab.com"
+  include_recommended_allowed: false
+
+cache:
+  paths:
+    - results/
+    - public/

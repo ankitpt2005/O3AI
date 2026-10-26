@@ -1,0 +1,10 @@
+{
+  "evidence": {
+    "secrets_found": 0,
+    "tests_passed": true
+  },
+  "stage": "security_qa",
+  "status": "PASS",
+  "summary": "Security & QA passed: zero secrets and clean test suite.",
+  "timestamp": "2026-10-26T15:52:14.380524+00:00"
+}

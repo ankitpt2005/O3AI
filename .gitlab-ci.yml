@@ -1,0 +1,106 @@
+# GitLab CI/CD Configuration for O3AI Working Tower
+# Verified against official GitLab Documentation:
+# - CI YAML syntax: https://docs.gitlab.com/ee/ci/yaml/
+# - SAST Template: https://docs.gitlab.com/ee/user/application_security/sast/
+# - Secret Detection: https://docs.gitlab.com/ee/user/application_security/secret_detection/
+# - GitLab Pages: https://docs.gitlab.com/ee/user/project/pages/
+
+default:
+  image: python:3.12-slim
+
+stages:
+  - validate
+  - test
+  - security
+  - tower-report
+  - approve
+  - deploy
+  - monitor
+
+include:
+  - template: Jobs/SAST.gitlab-ci.yml
+  - template: Jobs/Secret-Detection.gitlab-ci.yml
+
+# Reassign GitLab security analyzer jobs to the security stage
+sast:
+  stage: security
+
+secret_detection:
+  stage: security
+
+# Stage 1: Validate (Lint & AST check)
+validate-job:
+  stage: validate
+  script:
+    - python scripts/lint.py
+  artifacts:
+    when: always
+    paths:
+      - results/validate.json
+
+# Stage 2: Test (Unit test suite)
+test-job:
+  stage: test
+  script:
+    - python scripts/test_runner.py
+  artifacts:
+    when: always
+    paths:
+      - results/test.json
+
+# Stage 3: Security Gate (Deterministic secret & injection scan)
+security-gate:
+  stage: security
+  script:
+    - python scripts/security_check.py
+  artifacts:
+    when: always
+    paths:
+      - results/security.json
+
+# Stage 4: Tower Report (Compiles tower.html and report.md)
+tower-report-job:
+  stage: tower-report
+  script:
+    - python scripts/tower_report_job.py
+  artifacts:
+    when: always
+    paths:
+      - results/
+
+# Stage 5: Approve (Manual human sign-off gate)
+approve-job:
+  stage: approve
+  when: manual
+  allow_failure: false
+  script:
+    - python scripts/approve.py
+  artifacts:
+    when: always
+    paths:
+      - results/approve.json
+
+# Stage 6: Deploy (GitLab Pages hosting Working Tower dashboard)
+pages:
+  stage: deploy
+  needs:
+    - approve-job
+    - tower-report-job
+  script:
+    - python scripts/deploy_pages.py
+  artifacts:
+    paths:
+      - public
+      - results/deploy.json
+
+# Stage 7: Monitor (Health check hitting deployed site)
+monitor-job:
+  stage: monitor
+  needs:
+    - pages
+  script:
+    - python scripts/health_check.py
+  artifacts:
+    when: always
+    paths:
+      - results/monitor.json
