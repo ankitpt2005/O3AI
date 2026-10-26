@@ -1,0 +1,12 @@
+{
+  "evidence": {
+    "content_length": 11030,
+    "has_valid_title": true,
+    "health": "UP",
+    "status_code": 200,
+    "url": "http://127.0.0.1:55762/index.html"
+  },
+  "stage": "monitor",
+  "status": "PASS",
+  "timestamp": "2026-10-26T15:57:00.289499+00:00"
+}

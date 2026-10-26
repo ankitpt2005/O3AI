@@ -1,0 +1,10 @@
+{
+  "evidence": {
+    "index_published": true,
+    "message": "Published to public/index.html",
+    "target": "GitLab Pages (public/)"
+  },
+  "stage": "deploy",
+  "status": "PASS",
+  "timestamp": "2026-10-26T15:56:59.861368+00:00"
+}

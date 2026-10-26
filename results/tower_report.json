@@ -1,0 +1,11 @@
+{
+  "evidence": {
+    "html_path": "results\\tower.html",
+    "html_size_bytes": 11035,
+    "md_path": "results\\report.md",
+    "md_size_bytes": 760
+  },
+  "stage": "tower-report",
+  "status": "PASS",
+  "timestamp": "2026-10-26T15:56:59.510566+00:00"
+}

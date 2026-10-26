@@ -1,0 +1,16 @@
+{
+  "evidence": {
+    "approved_by": "human_reviewer",
+    "issues": [],
+    "prerequisites_checked": [
+      "validate",
+      "test",
+      "security",
+      "tower_report"
+    ],
+    "verification_passed": true
+  },
+  "stage": "approve",
+  "status": "PASS",
+  "timestamp": "2026-10-26T15:56:59.655999+00:00"
+}

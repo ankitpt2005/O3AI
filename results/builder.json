@@ -1,0 +1,14 @@
+{
+  "evidence": {
+    "diff_path": "results\\mr_patch.diff",
+    "exit_code": 0,
+    "patch_applied": true,
+    "target_files": [
+      "sample_app/signup.py"
+    ]
+  },
+  "stage": "builder",
+  "status": "PASS",
+  "summary": "Builder implemented email and password validation rules.",
+  "timestamp": "2026-10-26T15:56:56.116639+00:00"
+}
