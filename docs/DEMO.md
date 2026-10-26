@@ -1,7 +1,7 @@
 # O3AI End-to-End Demo Guide: Goal-to-Result on GitLab
 
 > **Tagline:** *"You give it a goal. It delivers a result."*  
-> **Demonstration Target:** [sample_app/signup.py](file:///c:/Users/Ankit%20Pandit/OneDrive/Documents/Hacathon%20projects/O3AI/sample_app/signup.py)  
+> **Demonstration Target:** [sample_app/signup.py](sample_app/signup.py)  
 > **Goal Issue #12:** `Add input validation to signup: reject invalid emails and passwords under 8 chars.`
 
 ---
@@ -9,7 +9,7 @@
 ## 1. Demo Narrative & Architecture
 
 This demo presents the full autonomous lifecycle of O3AI inside GitLab:
-1. **Goal Ingestion**: A GitLab issue is created using the [Goal Session template](file:///c:/Users/Ankit%20Pandit/OneDrive/Documents/Hacathon%20projects/O3AI/.gitlab/issue_templates/goal_session.md).
+1. **Goal Ingestion**: A GitLab issue is created using the [Goal Session template](.gitlab/issue_templates/goal_session.md).
 2. **Deterministic Baseline**: The initial test suite runs on unvalidated code, proving that the CI pipeline fails (**RED**).
 3. **Autonomous Duo Flow**: The **O3AI Planner Agent** and **Builder Flow** ingest the issue as untrusted data, formulate a discrete DAG task breakdown, write compliant Python code to validate emails and passwords, and open a Merge Request.
 4. **Security & QA Verification**: An automated reviewer bot scans the patch for leaked secrets, prompt injection attempts, and unit test regressions, commenting `[APPROVED]` on the MR.
@@ -141,9 +141,9 @@ bash scripts/demo_reset.sh
     - Diff: results/mr_patch.diff
   ```
 - **Inspect Artifacts:**
-  1. [results/planner.json](file:///c:/Users/Ankit%20Pandit/OneDrive/Documents/Hacathon%20projects/O3AI/results/planner.json): Contains problem statement, 5 evidence questions, and 4 DAG tasks.
-  2. [results/builder.json](file:///c:/Users/Ankit%20Pandit/OneDrive/Documents/Hacathon%20projects/O3AI/results/builder.json): Records code modifications applied to `sample_app/signup.py`.
-  3. [results/mr_patch.diff](file:///c:/Users/Ankit%20Pandit/OneDrive/Documents/Hacathon%20projects/O3AI/results/mr_patch.diff): Clean diff introducing `EMAIL_REGEX` and `len(password) < 8` checks.
+  1. [results/planner.json](results/planner.json): Contains problem statement, 5 evidence questions, and 4 DAG tasks.
+  2. [results/builder.json](results/builder.json): Records code modifications applied to `sample_app/signup.py`.
+  3. [results/mr_patch.diff](results/mr_patch.diff): Clean diff introducing `EMAIL_REGEX` and `len(password) < 8` checks.
 
 ---
 
@@ -158,7 +158,7 @@ bash scripts/demo_reset.sh
     - File: results/mr_review.md
     - Verdict: APPROVED
   ```
-- **Review Comment Content ([results/mr_review.md](file:///c:/Users/Ankit%20Pandit/OneDrive/Documents/Hacathon%20projects/O3AI/results/mr_review.md)):**
+- **Review Comment Content ([results/mr_review.md](results/mr_review.md)):**
   ```markdown
   ## [GATE] O3AI Security & QA Gate: Merge Request Review
 
@@ -211,9 +211,9 @@ bash scripts/demo_reset.sh
 ---
 
 ### Step 6: Review Live Artifacts
-1. **Interactive Dashboard:** Open [results/tower.html](file:///c:/Users/Ankit%20Pandit/OneDrive/Documents/Hacathon%20projects/O3AI/results/tower.html) in your browser to view the glassmorphism dark-mode UI with live floor progress cards.
-2. **Executive Markdown Report:** Inspect [results/report.md](file:///c:/Users/Ankit%20Pandit/OneDrive/Documents/Hacathon%20projects/O3AI/results/report.md).
-3. **Deployed GitLab Pages Site:** View [public/index.html](file:///c:/Users/Ankit%20Pandit/OneDrive/Documents/Hacathon%20projects/O3AI/public/index.html).
+1. **Interactive Dashboard:** Open [results/tower.html](results/tower.html) in your browser to view the glassmorphism dark-mode UI with live floor progress cards.
+2. **Executive Markdown Report:** Inspect [results/report.md](results/report.md).
+3. **Deployed GitLab Pages Site:** View [public/index.html](public/index.html).
 
 ---
 

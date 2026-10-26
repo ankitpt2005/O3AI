@@ -69,33 +69,33 @@ flowchart TD
 
 O3AI is natively integrated with GitLab Duo's Flow Registry v1 and Custom Agent Platform:
 
-- **Custom Agent ([.gitlab/duo/flows/o3ai_planner.yml](file:///c:/Users/Ankit%20Pandit/OneDrive/Documents/Hacathon%20projects/O3AI/.gitlab/duo/flows/o3ai_planner.yml))**:
+- **Custom Agent ([.gitlab/duo/flows/o3ai_planner.yml](.gitlab/duo/flows/o3ai_planner.yml))**:
   - Implements the `O3AI Planner` persona.
   - Treats the issue title and body as strictly untrusted data enclosed in safe boundary delimiters.
   - Formulates at most 5 evidence questions and decomposes work into an acyclic DAG.
-- **Autonomous Flow ([.gitlab/duo/flows/issue_to_mr_flow.yml](file:///c:/Users/Ankit%20Pandit/OneDrive/Documents/Hacathon%20projects/O3AI/.gitlab/duo/flows/issue_to_mr_flow.yml))**:
+- **Autonomous Flow ([.gitlab/duo/flows/issue_to_mr_flow.yml](.gitlab/duo/flows/issue_to_mr_flow.yml))**:
   - Chains the issue trigger directly to the Planner Agent.
   - Delegates code execution to the built-in Developer Flow to patch files and open a Draft Merge Request.
-- **Runtime Sandboxing ([.gitlab/duo/agent-config.yml](file:///c:/Users/Ankit%20Pandit/OneDrive/Documents/Hacathon%20projects/O3AI/.gitlab/duo/agent-config.yml))**:
+- **Runtime Sandboxing ([.gitlab/duo/agent-config.yml](.gitlab/duo/agent-config.yml))**:
   - Configures container image, setup scripts, and strict outbound network policies.
-- **Security & QA MR Bot ([scripts/mr_review_comment.py](file:///c:/Users/Ankit%20Pandit/OneDrive/Documents/Hacathon%20projects/O3AI/scripts/mr_review_comment.py))**:
+- **Security & QA MR Bot ([scripts/mr_review_comment.py](scripts/mr_review_comment.py))**:
   - Automatically reviews Merge Requests, scanning diffs for credentials and evaluating test results before leaving an `[APPROVED]` or `[CHANGES REQUIRED]` comment.
 
 ---
 
 ## 5. GitLab CI/CD Pipeline (7 Stages)
 
-The complete pipeline is codified in [.gitlab-ci.yml](file:///c:/Users/Ankit%20Pandit/OneDrive/Documents/Hacathon%20projects/O3AI/.gitlab-ci.yml):
+The complete pipeline is codified in [.gitlab-ci.yml](.gitlab-ci.yml):
 
 | Stage | Script | Deterministic Evidence | Purpose |
 | :--- | :--- | :--- | :--- |
-| **`validate`** | [scripts/lint.py](file:///c:/Users/Ankit%20Pandit/OneDrive/Documents/Hacathon%20projects/O3AI/scripts/lint.py) | `results/validate.json` | AST syntax checking and code hygiene |
-| **`test`** | [scripts/test_runner.py](file:///c:/Users/Ankit%20Pandit/OneDrive/Documents/Hacathon%20projects/O3AI/scripts/test_runner.py) | `results/test.json` | Automated discovery and execution of 52 unit tests |
-| **`security`** | [scripts/security_check.py](file:///c:/Users/Ankit%20Pandit/OneDrive/Documents/Hacathon%20projects/O3AI/scripts/security_check.py) | `results/security.json` | Scans for leaked secrets and unsafe Python invocations |
-| **`tower-report`** | [scripts/tower_report_job.py](file:///c:/Users/Ankit%20Pandit/OneDrive/Documents/Hacathon%20projects/O3AI/scripts/tower_report_job.py) | `results/tower_report.json` | Compiles `tower.html` and `report.md` |
-| **`approve`** | [scripts/approve.py](file:///c:/Users/Ankit%20Pandit/OneDrive/Documents/Hacathon%20projects/O3AI/scripts/approve.py) | `results/approve.json` | Blocking human-in-the-loop sign-off |
-| **`deploy`** | [scripts/deploy_pages.py](file:///c:/Users/Ankit%20Pandit/OneDrive/Documents/Hacathon%20projects/O3AI/scripts/deploy_pages.py) | `results/deploy.json` | Publishes dashboard to GitLab Pages (`public/index.html`) |
-| **`monitor`** | [scripts/health_check.py](file:///c:/Users/Ankit%20Pandit/OneDrive/Documents/Hacathon%20projects/O3AI/scripts/health_check.py) | `results/monitor.json` | Performs live HTTP GET probe and verifies DOM title |
+| **`validate`** | [scripts/lint.py](scripts/lint.py) | `results/validate.json` | AST syntax checking and code hygiene |
+| **`test`** | [scripts/test_runner.py](scripts/test_runner.py) | `results/test.json` | Automated discovery and execution of 52 unit tests |
+| **`security`** | [scripts/security_check.py](scripts/security_check.py) | `results/security.json` | Scans for leaked secrets and unsafe Python invocations |
+| **`tower-report`** | [scripts/tower_report_job.py](scripts/tower_report_job.py) | `results/tower_report.json` | Compiles `tower.html` and `report.md` |
+| **`approve`** | [scripts/approve.py](scripts/approve.py) | `results/approve.json` | Blocking human-in-the-loop sign-off |
+| **`deploy`** | [scripts/deploy_pages.py](scripts/deploy_pages.py) | `results/deploy.json` | Publishes dashboard to GitLab Pages (`public/index.html`) |
+| **`monitor`** | [scripts/health_check.py](scripts/health_check.py) | `results/monitor.json` | Performs live HTTP GET probe and verifies DOM title |
 
 ---
 
@@ -193,4 +193,4 @@ mindmap
 
 ## 9. License
 
-This project is licensed under the MIT License - see the [LICENSE](file:///c:/Users/Ankit%20Pandit/OneDrive/Documents/Hacathon%20projects/O3AI/LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
