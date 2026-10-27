@@ -3,7 +3,7 @@
 Executes the complete Goal -> Result lifecycle:
 1. Resets sample_app/signup.py to broken state (missing email & password validation).
 2. Demonstrates RED pipeline (test failures).
-3. Executes GitLab Duo Planner Agent + Builder to generate patch and Draft MR.
+3. Executes offline simulation of Duo flow (Planner + Builder) to generate patch and Draft MR.
 4. Posts autonomous Security / QA review comment.
 5. Executes GREEN pipeline across all 7 stages.
 6. Displays Tower report and health monitor pass.
@@ -73,8 +73,8 @@ def run_demo(interactive: bool = False) -> int:
     # -------------------------------------------------------------
     # Step 3: GitLab Duo Issue -> Planner -> MR Builder Flow
     # -------------------------------------------------------------
-    print_banner(3, "GitLab Duo Autonomous Flow (Issue -> Planner -> MR)")
-    print("Running Planner Agent on Goal Issue #12 and applying Builder patch...")
+    print_banner(3, "Offline Simulation of Duo Flow (Issue -> Planner -> MR)")
+    print("Running offline simulation of the Duo flow for reproducible tests...")
     ret = run_command_live([sys.executable, "scripts/issue_to_mr.py"], WORKSPACE)
     if ret != 0:
         print("[ERROR] issue_to_mr.py failed.")

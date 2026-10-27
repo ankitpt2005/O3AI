@@ -129,8 +129,8 @@ bash scripts/demo_reset.sh
 
 ---
 
-### Step 3: Run GitLab Duo Planner Agent & Open MR
-- **Action:** In GitLab Duo, run the `O3AI Planner` agent, or execute the autonomous flow runner:
+### Step 3: Run Offline Simulation of Duo Flow & Open MR
+- **Action:** Run the offline simulation of the Duo flow for reproducible tests (or in GitLab Duo, invoke the custom agent using prompts from [docs/planner_agent_prompt.md](planner_agent_prompt.md)):
   ```powershell
   python scripts/issue_to_mr.py
   ```

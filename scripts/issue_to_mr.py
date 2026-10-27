@@ -1,4 +1,4 @@
-"""End-to-End Goal Flow: Issue -> Planner -> Merge Request (offline engine)."""
+"""Offline simulation of the Duo flow for reproducible tests: Issue -> Planner -> Merge Request."""
 
 from __future__ import annotations
 import json
@@ -55,7 +55,7 @@ def validate_signup(data: Dict[str, str]) -> Tuple[bool, List[str]]:
 
 
 def run_issue_to_mr(issue: GitLabIssue, workspace_root: Path) -> dict:
-    """Run Planner -> Builder -> MR generation pipeline."""
+    """Run offline simulation of the Duo flow for reproducible tests (Planner -> Builder -> MR generation)."""
     results_dir = workspace_root / "results"
     results_dir.mkdir(parents=True, exist_ok=True)
 

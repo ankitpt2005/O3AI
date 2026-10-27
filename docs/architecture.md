@@ -1,7 +1,7 @@
 # O3AI Architecture & Working Tower
 
 ## Overview
-O3AI operates on a strict goal-to-result methodology natively integrated into GitLab:
+O3AI operates on a strict goal-to-result methodology built for GitLab:
 1. **One GitLab Issue = One Goal Session**:
    - Title max 35 words.
    - Single topic only.

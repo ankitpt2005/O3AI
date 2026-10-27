@@ -1,7 +1,7 @@
 # O3AI: Optimum Objective Operational AI
 
 > **"You give it a goal. It delivers a result."**  
-> *GitLab-Native Autonomous Goal-to-Result Engine for Software Engineering*
+> *GitLab-Native Goal-to-Result Engine for Software Engineering*
 
 ---
 
@@ -30,7 +30,23 @@ Modern software engineering teams face three critical bottlenecks when adopting 
 
 ---
 
-## 3. Architecture & Working Tower Workflow
+## 3. Real vs Simulated
+
+To guarantee fast, 100% reproducible tests without external network dependencies, API credits, or external LLM drift:
+
+| Component | Real (Implemented & Live) | Offline Simulation (Reproducible Tests) |
+| :--- | :--- | :--- |
+| **Working Tower Engine** | Full 4-floor execution contract, DAG validator, models, security checks | — |
+| **Evidence Gating** | Deterministic derivation from `results/*.json` (`PENDING` / `PASS` / `FAIL`) | — |
+| **GitLab CI/CD Pipeline** | 7 live stages in `.gitlab-ci.yml`, SAST, Secret Detection, Pages, Monitor | — |
+| **Unit Tests** | 52 real unittest assertions executing in ~0.5s with zero external dependencies | — |
+| **Duo Agent Prompt & Specs** | Validated Flow Registry YAML specs and UI system prompt ([docs/planner_agent_prompt.md](docs/planner_agent_prompt.md)) | — |
+| **Duo Flow Execution Script** | — | `scripts/issue_to_mr.py` and `scripts/mr_review_comment.py` provide an offline simulation of the Duo flow for reproducible tests |
+| **Health Monitor Server** | Real HTTP socketserver probe verifying status 200 OK | Probes ephemeral local port rather than cloud URL |
+
+---
+
+## 4. Architecture & Working Tower Workflow
 
 ```mermaid
 flowchart TD
@@ -65,25 +81,28 @@ flowchart TD
 
 ---
 
-## 4. GitLab Duo Agent Platform Integration
+## 5. GitLab Duo Agent Platform Specification & Offline Simulation
 
-O3AI is natively integrated with GitLab Duo's Flow Registry v1 and Custom Agent Platform:
+O3AI provides formal specification files and offline simulations for GitLab Duo:
 
-- **Custom Agent ([.gitlab/duo/flows/o3ai_planner.yml](.gitlab/duo/flows/o3ai_planner.yml))**:
-  - Implements the `O3AI Planner` persona.
-  - Treats the issue title and body as strictly untrusted data enclosed in safe boundary delimiters.
+- **Custom Agent Definition ([.gitlab/duo/flows/o3ai_planner.yml](.gitlab/duo/flows/o3ai_planner.yml))**:
+  - Implements the `O3AI Planner` persona adhering to Flow Registry v1 schema.
+  - Treats issue content strictly as untrusted data enclosed in safe boundary delimiters.
   - Formulates at most 5 evidence questions and decomposes work into an acyclic DAG.
-- **Autonomous Flow ([.gitlab/duo/flows/issue_to_mr_flow.yml](.gitlab/duo/flows/issue_to_mr_flow.yml))**:
-  - Chains the issue trigger directly to the Planner Agent.
-  - Delegates code execution to the built-in Developer Flow to patch files and open a Draft Merge Request.
+- **Agent UI Prompt ([docs/planner_agent_prompt.md](docs/planner_agent_prompt.md))**:
+  - Pure plain-text system prompt ready to paste directly into GitLab's Custom Agent UI.
+- **Custom Flow Specification ([.gitlab/duo/flows/issue_to_mr_flow.yml](.gitlab/duo/flows/issue_to_mr_flow.yml))**:
+  - Defines the YAML flow linking issue triggers to the Planner and the built-in Developer Flow.
 - **Runtime Sandboxing ([.gitlab/duo/agent-config.yml](.gitlab/duo/agent-config.yml))**:
   - Configures container image, setup scripts, and strict outbound network policies.
-- **Security & QA MR Bot ([scripts/mr_review_comment.py](scripts/mr_review_comment.py))**:
-  - Automatically reviews Merge Requests, scanning diffs for credentials and evaluating test results before leaving an `[APPROVED]` or `[CHANGES REQUIRED]` comment.
+- **Offline Simulation Script ([scripts/issue_to_mr.py](scripts/issue_to_mr.py))**:
+  - Serves as an **offline simulation of the Duo flow for reproducible tests**, running the planner agent, applying the code patch, and generating MR payloads without external network calls.
+- **Security & QA MR Review Bot ([scripts/mr_review_comment.py](scripts/mr_review_comment.py))**:
+  - Reviews Merge Requests against security criteria and outputs `[APPROVED]` or `[CHANGES REQUIRED]` comments.
 
 ---
 
-## 5. GitLab CI/CD Pipeline (7 Stages)
+## 6. GitLab CI/CD Pipeline (7 Stages)
 
 The complete pipeline is codified in [.gitlab-ci.yml](.gitlab-ci.yml):
 
@@ -99,7 +118,7 @@ The complete pipeline is codified in [.gitlab-ci.yml](.gitlab-ci.yml):
 
 ---
 
-## 6. How to Run
+## 7. How to Run
 
 ### System Requirements
 - **Python 3.12+**
@@ -145,7 +164,7 @@ python -m o3ai.cli generate-report
 
 ---
 
-## 7. Current Limitations
+## 8. Current Limitations
 
 1. **Python Standard Library Constraint**: Core engine relies strictly on Python 3.12+ built-in modules (`json`, `re`, `urllib`, `socketserver`, `unittest`, `dataclasses`). External database drivers and heavy web frameworks are intentionally excluded.
 2. **Single-Topic Issue Boundary**: Goal sessions enforce a strict 35-word limit and reject multi-topic conjunctions (`furthermore; separately`). Multi-epic goals must be split across individual issues.
@@ -153,7 +172,7 @@ python -m o3ai.cli generate-report
 
 ---
 
-## 8. Roadmap & The 5-Domain Vision
+## 9. Roadmap & The 5-Domain Vision
 
 While the hackathon implementation focuses on software engineering on GitLab, O3AI is architected around a unified **5-Domain Operational AI Vision**:
 
@@ -191,6 +210,6 @@ mindmap
 
 ---
 
-## 9. License
+## 10. License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

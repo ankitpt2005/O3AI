@@ -1,4 +1,4 @@
-"""Tests for Issue -> Planner -> Merge Request flow."""
+"""Tests for offline simulation of the Duo flow for reproducible tests (Issue -> Planner -> MR)."""
 
 import shutil
 import tempfile
@@ -9,7 +9,7 @@ from scripts.issue_to_mr import run_issue_to_mr
 
 
 class TestIssueToMR(unittest.TestCase):
-    """Test flow execution from issue to patch and MR generation."""
+    """Test offline simulation of the Duo flow for reproducible tests."""
 
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory()
