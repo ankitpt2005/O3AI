@@ -133,14 +133,9 @@ python scripts/run_demo.py
 ```powershell
 python scripts/run_demo.py --interactive
 ```
-
 ### 3. Reset Demo to Initial Broken Baseline
 ```powershell
-# Windows PowerShell
 python scripts/demo_reset.py
-
-# Linux / macOS / Bash
-bash scripts/demo_reset.sh
 ```
 
 ### 4. Run the Full 7-Stage CI Pipeline Locally

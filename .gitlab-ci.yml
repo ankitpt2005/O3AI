@@ -61,6 +61,7 @@ security-gate:
 # Stage 4: Tower Report (Compiles tower.html and report.md)
 tower-report-job:
   stage: tower-report
+  when: always
   script:
     - python scripts/tower_report_job.py
   artifacts:

@@ -62,11 +62,7 @@ python scripts/run_demo.py --interactive
 ### Reset State (For Re-recording)
 To restore `sample_app/signup.py` to its initial broken state and clean demo artifacts:
 ```powershell
-# Windows PowerShell
 python scripts/demo_reset.py
-
-# Bash / macOS / Linux
-bash scripts/demo_reset.sh
 ```
 
 ---

@@ -10,14 +10,14 @@ from pathlib import Path
 
 def run_tests_and_record(workspace_root: Path) -> int:
     """Run unittest suite and record evidence in results/test.json."""
-    # Ensure workspace root is in sys.path for test discovery
-    workspace_str = str(workspace_root.resolve())
+    resolved_root = workspace_root.resolve()
+    workspace_str = str(resolved_root)
     if workspace_str not in sys.path:
         sys.path.insert(0, workspace_str)
 
     loader = unittest.TestLoader()
     suite = loader.discover(
-        start_dir=str(workspace_root / "tests"),
+        start_dir=str(resolved_root / "tests"),
         pattern="test_*.py",
         top_level_dir=workspace_str,
     )

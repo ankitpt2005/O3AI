@@ -1,4 +1,0 @@
---- a/sample_app/signup.py
-+++ b/sample_app/signup.py
-@@ -1,36 +1,38 @@
-+ [O3AI Patch Applied: email format and password strength rules]

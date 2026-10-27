@@ -29,25 +29,37 @@ def run_pipeline() -> int:
     results_dir = workspace / "results"
     results_dir.mkdir(parents=True, exist_ok=True)
 
+    failed_stages: list[str] = []
+
     for stage_name, cmd in PIPELINE_STAGES:
+        # If earlier verification failed, block human gate and deployment stages
+        if failed_stages and stage_name in ("approve", "deploy", "monitor"):
+            print(f"--- [Stage: {stage_name}] BLOCKED due to earlier failure ({', '.join(failed_stages)}) ---")
+            continue
+
         print(f"--- [Stage: {stage_name}] Running: {' '.join(cmd[1:])} ---")
         proc = subprocess.run(cmd)
         if proc.returncode != 0:
             print(f"\n[FAILURE] Stage '{stage_name}' failed with exit code {proc.returncode}.\n")
-            print("[PIPELINE RESULT]: RED [FAIL]")
-            return proc.returncode
-
-        # Check evidence file existence and content
-        evidence_file = results_dir / f"{stage_name.replace('-', '_')}.json"
-        if not evidence_file.exists():
-            evidence_file = results_dir / f"{stage_name}.json"
-
-        if evidence_file.exists():
-            with open(evidence_file, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            print(f"  -> Evidence verified: {evidence_file.name} (Status: {data.get('status')})\n")
+            failed_stages.append(stage_name)
         else:
-            print(f"  -> [WARNING] Missing evidence file: {evidence_file.name}\n")
+            # Check evidence file existence and content
+            evidence_file = results_dir / f"{stage_name.replace('-', '_')}.json"
+            if not evidence_file.exists():
+                evidence_file = results_dir / f"{stage_name}.json"
+
+            if evidence_file.exists():
+                with open(evidence_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                print(f"  -> Evidence verified: {evidence_file.name} (Status: {data.get('status')})\n")
+            else:
+                print(f"  -> [WARNING] Missing evidence file: {evidence_file.name}\n")
+
+    if failed_stages:
+        print("=" * 60)
+        print(f"[PIPELINE RESULT]: RED [FAIL] (Failed stages: {', '.join(failed_stages)})")
+        print("=" * 60)
+        return 1
 
     print("=" * 60)
     print("[PIPELINE RESULT]: ALL 7 STAGES GREEN [PASS]")
