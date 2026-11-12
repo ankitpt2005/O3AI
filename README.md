@@ -157,13 +157,34 @@ python -m o3ai.cli init-session --issue-id 12 --title "Add input validation to s
 python -m o3ai.cli generate-report
 ```
 
+### 7. PayPal Sandbox Web UI & Optional AI Planner (Downstream of O3AI)
+O3AI remains the core verification engine ("O3AI proves the work before money moves"). External network clients live in `integrations/` (`integrations/paypal.py` and `integrations/ai_planner.py`), keeping `o3ai/` offline and network-free:
+
+- **Developer / Operator Console (`/`) & Customer Milestone Page (`/customer`)**:
+  ```powershell
+  python scripts/run_web_ui.py
+  ```
+- **PayPal Sandbox CLI**:
+  ```powershell
+  python scripts/paypal_demo.py create-order --amount 25.00 --currency USD --description "Verified milestone"
+  python scripts/paypal_demo.py verify-order --order-id <ORDER_ID>
+  python scripts/paypal_demo.py capture-order --order-id <ORDER_ID>
+  ```
+- **Optional Live AI Planner Proposal (`PROPOSAL_ONLY`, never Tower evidence)**:
+  ```powershell
+  python scripts/ai_plan.py --goal "Verify a completed software milestone before issuing a test payment"
+  ```
+
+See [docs/paypal-hackathon.md](docs/paypal-hackathon.md) for sandbox app credentials, Personal/Business test account setup, operator authentication, and end-to-end demo steps.
+
 ---
 
 ## 8. Current Limitations
 
 1. **Python Standard Library Constraint**: Core engine relies strictly on Python 3.12+ built-in modules (`json`, `re`, `urllib`, `socketserver`, `unittest`, `dataclasses`). External database drivers and heavy web frameworks are intentionally excluded.
 2. **Single-Topic Issue Boundary**: Goal sessions enforce a strict 35-word limit and reject multi-topic conjunctions (`furthermore; separately`). Multi-epic goals must be split across individual issues.
-3. **Local HTTP Probing in Monitor Stage**: The built-in monitor stage spins up a local `socketserver` to probe GitLab Pages artifacts. In enterprise production, this binds to GitLab Environment URLs and external synthetic monitoring APIs.
+3. **Local HTTP Probing & Localhost UI Binding**: The built-in monitor stage probes a local `socketserver`, and `scripts/run_web_ui.py` binds to `127.0.0.1` by default (non-loopback hosts require `O3AI_OPERATOR_TOKEN`; public hosting requires HTTPS/TLS).
+4. **PayPal Sandbox Only**: `integrations/paypal.py` fixes the PayPal API host to `https://api-m.sandbox.paypal.com`. Automated tests use mocked PayPal/AI responses; completing a live Sandbox transaction requires real Sandbox credentials and a Sandbox Personal buyer approval.
 
 ---
 

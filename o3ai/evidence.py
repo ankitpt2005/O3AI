@@ -107,13 +107,22 @@ def load_evidence(stage: str, results_dir: Path) -> Dict[str, Any]:
 def _evaluate_floor_evidence(stage: str, evidence: Dict[str, Any]) -> bool:
     """Evaluate if evidence payload satisfies specific metric requirements."""
     if stage == "planner":
-        return bool(evidence.get("is_dag") is True and int(evidence.get("task_count", 0)) >= 1)
+        tasks = evidence.get("tasks")
+        task_count = evidence.get("task_count")
+        return bool(
+            evidence.get("is_dag") is True
+            and isinstance(tasks, list)
+            and len(tasks) >= 1
+            and type(task_count) is int
+            and task_count >= 1
+        )
     if stage == "builder":
-        return bool(evidence.get("exit_code") == 0 and isinstance(evidence.get("target_files"), list))
+        return bool(type(evidence.get("exit_code")) is int and evidence.get("exit_code") == 0 and isinstance(evidence.get("target_files"), list))
     if stage == "security_qa":
-        return bool(evidence.get("secrets_found") == 0 and evidence.get("tests_passed") is True)
+        return bool(type(evidence.get("secrets_found")) is int and evidence.get("secrets_found") == 0 and evidence.get("tests_passed") is True)
     if stage == "release_monitor":
-        return bool(evidence.get("rollback_defined") is True and bool(evidence.get("version")))
+        version = evidence.get("version")
+        return bool(evidence.get("rollback_defined") is True and isinstance(version, str) and bool(version.strip()))
     return True
 
 

@@ -3,86 +3,130 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>O3AI Customer Checkout</title>
+  <title>O3AI Customer Milestone Checkout</title>
   <style>
-    :root { --bg:#071528; --panel:#101f39; --text:#eef6ff; --muted:#a5bbd8; --blue:#5ec3ff; --green:#42e0b0; --shadow:0 10px 26px rgba(0,0,0,.35); }
-    body { margin:0; font-family: Inter, Segoe UI, sans-serif; background: radial-gradient(circle at top, #10264a 0%, #071528 40%, #030b16 100%); color:var(--text); padding: 40px 16px; }
-    .checkout { max-width: 980px; margin: 0 auto; display:grid; grid-template-columns: 1.2fr .8fr; gap:20px; }
-    .panel { background: rgba(16,31,57,.93); border:1px solid rgba(166,187,216,.25); border-radius: 18px; box-shadow: var(--shadow); padding: 30px; }
-    .title { font-size: 34px; font-weight: 800; margin: 0 0 8px; }
-    .sub { color: var(--muted); }
-    .price { font-size: 54px; font-weight: 800; color: var(--green); margin: 18px 0; }
-    .pill { display:inline-block; padding: 8px 12px; border-radius: 999px; background: rgba(94,195,255,.12); color: var(--blue); font-weight:800; border:1px solid rgba(94,195,255,.35); }
-    .btn { display:inline-block; background: linear-gradient(135deg, #1FA8FF, #0d5bff); color:white; padding: 14px 22px; border-radius: 12px; font-weight:800; border:none; cursor:pointer; text-decoration:none; }
-    .summary { list-style:none; padding:0; margin:18px 0 0; }
-    .summary li { display:flex; justify-content:space-between; padding: 10px 0; border-bottom:1px solid rgba(255,255,255,.09); color:var(--muted); }
-    .summary strong { color: var(--text); }
+    :root { --bg:#071528; --panel:#101f39; --text:#eef6ff; --muted:#a5bbd8; --blue:#5ec3ff; --green:#42e0b0; --yellow:#f7c768; --red:#ff6b6b; --shadow:0 10px 26px rgba(0,0,0,.35); }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: Inter, "Segoe UI", sans-serif; background: radial-gradient(circle at top, #10264a 0%, #071528 45%, #030b16 100%); color:var(--text); padding: 36px 16px; }
+    .checkout { max-width: 980px; margin: 0 auto; display:grid; grid-template-columns: 1.15fr .85fr; gap:20px; }
+    .panel { background: rgba(16,31,57,.93); border:1px solid rgba(166,187,216,.25); border-radius: 18px; box-shadow: var(--shadow); padding: 28px; }
+    .title { font-size: 30px; font-weight: 800; margin: 12px 0 8px; }
+    .sub { color: var(--muted); line-height: 1.5; font-size: 14px; }
+    .price { font-size: 48px; font-weight: 800; color: var(--green); margin: 18px 0; }
+    .pill { display:inline-block; padding: 7px 12px; border-radius: 999px; font-weight:800; font-size:12px; letter-spacing:.06em; text-transform:uppercase; }
+    .READY { background: rgba(66,224,176,.15); color: var(--green); border:1px solid rgba(66,224,176,.45); }
+    .BLOCKED { background: rgba(255,107,107,.14); color: var(--red); border:1px solid rgba(255,107,107,.45); }
+    .btn { display:inline-block; background: linear-gradient(135deg, #1FA8FF, #0d5bff); color:white; padding: 14px 22px; border-radius: 12px; font-weight:800; border:none; cursor:pointer; text-decoration:none; font-size:15px; }
+    .btn.disabled { opacity: 0.45; pointer-events: none; }
+    .summary { list-style:none; padding:0; margin:20px 0 0; }
+    .summary li { display:flex; justify-content:space-between; gap:12px; padding: 10px 0; border-bottom:1px solid rgba(255,255,255,.09); color:var(--muted); font-size:14px; }
+    .summary strong { color: var(--text); text-align:right; }
+    .box { margin-top:18px; background: rgba(0,0,0,.22); border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:14px; color: var(--muted); font-size: 13px; line-height: 1.6; }
+    .nav-link { display:inline-block; margin-top:16px; color:var(--blue); font-size:13px; text-decoration:none; }
     @media (max-width: 820px){ .checkout { grid-template-columns:1fr; } }
   </style>
 </head>
 <body>
   <div class="checkout">
     <div class="panel">
-      <div class="pill">Verified milestone</div>
-      <h1 class="title">O3AI completion payment</h1>
-      <div class="sub">The work is only payable after O3AI evidence is PASS and the human approval gate is complete.</div>
-      <div class="price">$25.00</div>
-      <button class="btn" id="payButton">Pay with PayPal Sandbox</button>
+      <div class="pill BLOCKED" id="gatePill">CHECKING O3AI GATE</div>
+      <h1 class="title" id="milestoneTitle">Verified O3AI Milestone</h1>
+      <div class="sub" id="milestoneDescription">Loading milestone details...</div>
+      <div class="price" id="milestonePrice">--</div>
+      <a class="btn disabled" id="paypalLink" href="#" rel="noopener">Continue to PayPal Sandbox</a>
       <ul class="summary">
-        <li><span>Work item</span><strong>Milestone approval</strong></li>
-        <li><span>Gateway</span><strong>PayPal Sandbox</strong></li>
-        <li><span>Currency</span><strong>USD</strong></li>
+        <li><span>Engine</span><strong>O3AI (Verified Gate)</strong></li>
+        <li><span>Operator Approval</span><strong id="operatorApprovalState">Checking...</strong></li>
+        <li><span>PayPal Order</span><strong id="orderState">Not created</strong></li>
+        <li><span>Buyer Approval</span><strong id="buyerState">Not started</strong></li>
+        <li><span>Capture State</span><strong id="captureState">Not captured</strong></li>
       </ul>
+      <a class="nav-link" href="/">← Developer / Operator Console</a>
     </div>
+
     <div class="panel">
-      <h2>What happens</h2>
-      <div class="sub" id="flowStatus">O3AI engine verifies the work before the payment is allowed.</div>
-      <div style="margin-top:20px; background: rgba(0,0,0,.18); border-radius:12px; padding:14px; color: var(--muted); min-height: 120px;" id="flowBox">
-        1. O3AI checks Planner → Builder → Security + QA → Release + Monitor<br>
-        2. Human approval confirms the evidence gate<br>
-        3. PayPal Sandbox opens a buyer approval screen<br>
-        4. O3AI records the completed sandbox capture
+      <h2 style="margin-top:0;">How O3AI Protects This Milestone</h2>
+      <div class="sub" id="flowStatus">Checking O3AI verification evidence...</div>
+      <div class="box" id="returnNotice" style="display:none;"></div>
+      <div class="box">
+        1. O3AI verifies Planner → Builder → Security &amp; QA → Release &amp; Monitor.<br>
+        2. An authorized O3AI operator signs off on the evidence gate and creates a PayPal Sandbox order.<br>
+        3. You continue to PayPal's own Sandbox approval screen and sign in with a Sandbox Personal buyer account.<br>
+        4. After you return, O3AI verifies your approval with PayPal before the operator confirms capture.
       </div>
     </div>
   </div>
 
   <script>
-    async function refreshStatus() {
-      const r = await fetch('/api/status');
-      const data = await r.json();
-      const isReady = data.status === 'READY';
-      const flowStatus = document.getElementById('flowStatus');
-      const payButton = document.getElementById('payButton');
-      flowStatus.textContent = isReady ? 'O3AI evidence is PASS and the payment gate is ready.' : 'Payment is blocked until O3AI evidence passes and the human approval gate is cleared.';
-      payButton.disabled = !isReady;
-      payButton.style.opacity = isReady ? '1' : '0.45';
-      payButton.title = isReady ? 'Open PayPal Sandbox' : 'Blocked by O3AI engine gate';
+    let latestCustomer = null;
+
+    function setReturnNotice(msg, isOk) {
+      const box = document.getElementById('returnNotice');
+      box.style.display = 'block';
+      box.textContent = msg;
+      box.style.color = isOk ? '#42e0b0' : '#f7c768';
     }
 
-    document.getElementById('payButton').addEventListener('click', async function () {
-      const status = await fetch('/api/status');
-      const data = await status.json();
-      if (data.status !== 'READY') {
-        alert('Payment blocked by O3AI evidence or approval gate.');
+    async function handlePayPalReturnIfPresent() {
+      const params = new URLSearchParams(window.location.search);
+      const action = params.get('paypal');
+      const token = params.get('token');
+      if (action === 'cancel') {
+        setReturnNotice('Buyer cancelled PayPal Sandbox approval. Order remains uncaptured.', false);
         return;
       }
-      const res = await fetch('/api/create-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: '25.00', currency: 'USD', description: 'Verified milestone payment' })
-      });
-      const order = await res.json();
-      if (order.ok) {
-        const approvalUrl = order.order?.approval_url || 'https://www.sandbox.paypal.com';
-        window.open(approvalUrl, '_blank', 'noopener');
-        alert('Sandbox approval page opened. Capture the order in the developer dashboard once the buyer approves.');
-      } else {
-        alert('Order creation failed.');
+      if (action === 'return' && token) {
+        const res = await fetch(`/api/customer/verify-return?token=${encodeURIComponent(token)}`);
+        const data = await res.json();
+        if (res.ok && data.ok) {
+          setReturnNotice(data.message, Boolean(data.buyer_approved));
+        } else {
+          setReturnNotice(data.error || 'Could not verify PayPal Sandbox order return.', false);
+        }
       }
-    });
+    }
 
-    refreshStatus();
-    setInterval(refreshStatus, 4000);
+    async function refreshStatus() {
+      const r = await fetch('/api/customer/milestone');
+      const data = await r.json();
+      latestCustomer = data;
+
+      const gatePill = document.getElementById('gatePill');
+      gatePill.textContent = data.gate_status === 'READY' ? 'O3AI VERIFIED • READY' : 'BLOCKED BY O3AI GATE';
+      gatePill.className = 'pill ' + (data.gate_ready ? 'READY' : 'BLOCKED');
+
+      document.getElementById('milestoneTitle').textContent = data.milestone?.title || 'Verified O3AI Milestone';
+      document.getElementById('milestoneDescription').textContent = data.milestone?.description || '';
+      document.getElementById('milestonePrice').textContent = `${data.milestone?.amount || '0.00'} ${data.milestone?.currency || 'USD'}`;
+      document.getElementById('operatorApprovalState').textContent = data.operator_approved ? 'APPROVED' : 'PENDING';
+      document.getElementById('orderState').textContent = data.order?.exists ? `${data.order.order_id} (${data.order.order_status})` : 'Not created';
+      document.getElementById('buyerState').textContent = data.order?.buyer_approved ? 'APPROVED' : (data.order?.buyer_approval_state || 'NOT_STARTED');
+      document.getElementById('captureState').textContent = data.capture?.completed ? `COMPLETED (${data.capture.capture_id})` : (data.capture?.capture_status || 'NOT_CAPTURED');
+      document.getElementById('flowStatus').textContent = data.gate_reason || '';
+
+      const link = document.getElementById('paypalLink');
+      const url = data.order?.approval_url;
+      if (data.gate_ready && data.order?.exists && url && url.startsWith('https://') && !data.order?.buyer_approved && !data.capture?.completed) {
+        link.href = url;
+        link.classList.remove('disabled');
+        link.textContent = 'Continue to PayPal Sandbox';
+      } else if (data.capture?.completed) {
+        link.href = '#';
+        link.classList.add('disabled');
+        link.textContent = 'Payment Completed on PayPal Sandbox';
+      } else if (data.order?.buyer_approved) {
+        link.href = '#';
+        link.classList.add('disabled');
+        link.textContent = 'Buyer Approved — Awaiting Operator Capture';
+      } else {
+        link.href = '#';
+        link.classList.add('disabled');
+        link.textContent = data.gate_ready ? 'Awaiting Operator Order Creation' : 'Blocked Until O3AI & Operator Approval';
+      }
+    }
+
+    handlePayPalReturnIfPresent().then(refreshStatus);
+    setInterval(refreshStatus, 5000);
   </script>
 </body>
 </html>

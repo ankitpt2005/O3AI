@@ -109,6 +109,29 @@ class TestEvidence(unittest.TestCase):
         )
         self.assertEqual(derive_floor_status("security_qa", self.results_dir), StageStatus.FAIL)
 
+    def test_malformed_types_and_corrupt_json_fail(self) -> None:
+        """Non-integer metrics, boolean-as-zero tricks, or corrupt JSON must fail."""
+        write_evidence(
+            "security_qa",
+            "PASS",
+            "Boolean trick",
+            {"secrets_found": False, "tests_passed": True},
+            self.results_dir,
+        )
+        self.assertEqual(derive_floor_status("security_qa", self.results_dir), StageStatus.FAIL)
+
+        write_evidence(
+            "planner",
+            "PASS",
+            "Bad task count",
+            {"tasks": [{"task_id": "1"}], "task_count": "not-an-int", "is_dag": True},
+            self.results_dir,
+        )
+        self.assertEqual(derive_floor_status("planner", self.results_dir), StageStatus.FAIL)
+
+        (self.results_dir / "builder.json").write_text("{corrupt json", encoding="utf-8")
+        self.assertEqual(derive_floor_status("builder", self.results_dir), StageStatus.FAIL)
+
     def test_derive_all_floor_statuses(self) -> None:
         """derive_all_floor_statuses returns dictionary of all 4 floor statuses."""
         statuses = derive_all_floor_statuses(self.results_dir)

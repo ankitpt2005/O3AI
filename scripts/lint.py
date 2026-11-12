@@ -31,7 +31,7 @@ def check_syntax_and_style(file_path: Path) -> List[str]:
 
 def run_lint(workspace_root: Path) -> Tuple[bool, List[str], List[str]]:
     """Scan all python files in o3ai, sample_app, tests, scripts."""
-    target_dirs = ["o3ai", "sample_app", "tests", "scripts"]
+    target_dirs = ["o3ai", "integrations", "sample_app", "tests", "scripts"]
     checked_files: List[str] = []
     all_errors: List[str] = []
 

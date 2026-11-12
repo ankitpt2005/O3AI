@@ -1,3 +1,30 @@
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local environment & IDE
+.venv/
+env/
+venv/
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Build & Deploy artifacts
+public/
+results/
+
 # Local secrets must never be committed.
 .env
 .env.*

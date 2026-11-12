@@ -5,7 +5,11 @@ import argparse
 import sys
 from pathlib import Path
 
-from o3ai.ai_planner import AIPlannerError, create_ai_plan
+_root = Path(__file__).resolve().parent.parent
+if str(_root) not in sys.path:
+    sys.path.insert(0, str(_root))
+
+from integrations.ai_planner import AIPlannerError, create_ai_plan
 
 
 def main(argv: list[str] | None = None) -> int:

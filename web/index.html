@@ -3,148 +3,436 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>O3AI Engine Console</title>
+  <title>O3AI Developer &amp; Operator Console</title>
   <style>
     :root {
-      --bg:#071528; --panel:#111f39; --card:#0f213e; --soft:#1c3256; --text:#eef6ff; --muted:#a6bbd5; --green:#42e0b0; --yellow:#f7c768; --red:#ff6b6b; --blue:#5ec3ff; --pink:#d39bff; --shadow:0 8px 24px rgba(0,0,0,0.35);
+      --bg:#071528; --panel:#111f39; --card:#0f213e; --soft:#1c3256; --text:#eef6ff;
+      --muted:#a6bbd5; --green:#42e0b0; --yellow:#f7c768; --red:#ff6b6b; --blue:#5ec3ff;
+      --shadow:0 8px 24px rgba(0,0,0,0.35);
     }
     * { box-sizing: border-box; }
-    body { margin:0; font-family: Inter, Segoe UI, sans-serif; background: radial-gradient(circle at top left, #12315d 0%, var(--bg) 35%, #071528 100%); color:var(--text); }
-    .wrap { max-width: 1280px; margin: 22px auto; padding: 0 20px 40px; }
-    header { display:flex; justify-content:space-between; align-items:center; margin-bottom: 26px; }
+    body { margin:0; font-family: Inter, "Segoe UI", sans-serif; background: radial-gradient(circle at top left, #12315d 0%, var(--bg) 40%, #050e1c 100%); color:var(--text); }
+    .wrap { max-width: 1320px; margin: 22px auto; padding: 0 20px 48px; }
+    header { display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom: 20px; }
     .brand { font-size: 28px; font-weight: 800; }
     .brand span { color: var(--blue); }
-    .pill { background: rgba(94,195,255,.12); color: var(--blue); border:1px solid rgba(94,195,255,.6); padding: 9px 16px; border-radius: 999px; font-weight: 700; }
-    .grid { display:grid; grid-template-columns: repeat(4, minmax(220px,1fr)); gap:18px; }
-    .card { background: rgba(17,31,57,.92); border: 1px solid rgba(112,146,190,.4); border-radius: 18px; box-shadow: var(--shadow); padding: 18px 18px 14px; }
-    .card h3 { margin: 0 0 8px; font-size: 17px; }
-    .status { display:inline-block; padding: 6px 10px; border-radius:999px; font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
-    .PASS { background: rgba(66,224,176,.15); color: var(--green); border:1px solid rgba(66,224,176,.45); }
-    .FAIL { background: rgba(255,107,107,.14); color: var(--red); border:1px solid rgba(255,107,107,.45); }
-    .PENDING { background: rgba(247,199,104,.14); color: var(--yellow); border:1px solid rgba(247,199,104,.45); }
-    .summary { margin-top: 16px; font-size: 14px; color: var(--muted); line-height: 1.6; }
-    .details { margin-top: 12px; font-size: 12px; color: var(--muted); }
-    .hero { display:grid; grid-template-columns: 1.3fr .7fr; gap:18px; margin-bottom: 20px; }
-    .panel { background: rgba(17,31,57,.92); border:1px solid rgba(112,146,190,.4); border-radius: 18px; box-shadow: var(--shadow); padding: 20px; }
-    .panel h2 { margin: 0 0 12px; }
-    .op-row { display:flex; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
-    button { border: none; border-radius: 12px; padding: 12px 18px; font-weight: 800; cursor:pointer; background: linear-gradient(135deg, var(--blue), #5d8bff); color: white; }
+    .subtitle { font-size: 13px; color: var(--muted); margin-top: 4px; }
+    .nav-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .pill { background: rgba(94,195,255,.12); color: var(--blue); border:1px solid rgba(94,195,255,.5); padding: 8px 14px; border-radius: 999px; font-weight: 700; font-size: 13px; text-decoration: none; }
+    .banner { background: rgba(247,199,104,.09); border:1px solid rgba(247,199,104,.35); border-radius: 12px; padding: 11px 16px; margin-bottom: 18px; font-size: 13px; color: var(--muted); }
+    .banner strong { color: var(--yellow); }
+    .hero { display:grid; grid-template-columns: 1.15fr .85fr; gap:18px; margin-bottom: 18px; }
+    .grid { display:grid; grid-template-columns: repeat(4, minmax(220px,1fr)); gap:16px; margin-bottom: 18px; }
+    .two-col { display:grid; grid-template-columns: 1fr 1fr; gap:18px; margin-bottom: 18px; }
+    .three-col { display:grid; grid-template-columns: repeat(3, 1fr); gap:14px; margin-top: 12px; }
+    .panel, .card { background: rgba(17,31,57,.92); border: 1px solid rgba(112,146,190,.38); border-radius: 16px; box-shadow: var(--shadow); padding: 18px; }
+    .tiny { font-size: 11px; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+    .value { font-size: 32px; font-weight: 800; margin: 6px 0 10px; }
+    .status { display:inline-block; padding: 5px 10px; border-radius:999px; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 6px; }
+    .PASS, .READY, .COMPLETED, .APPROVED { background: rgba(66,224,176,.15); color: var(--green); border:1px solid rgba(66,224,176,.45); }
+    .FAIL, .BLOCKED, .FAILED, .STALE { background: rgba(255,107,107,.14); color: var(--red); border:1px solid rgba(255,107,107,.45); }
+    .PENDING, .NEEDS_EVIDENCE, .AWAITING_BUYER, .CREATED, .PROPOSAL_ONLY { background: rgba(247,199,104,.14); color: var(--yellow); border:1px solid rgba(247,199,104,.45); }
+    .NOT_CREATED, .NOT_STARTED, .NOT_CAPTURED, .NONE { background: rgba(166,187,213,.12); color: var(--muted); border:1px solid rgba(166,187,213,.3); }
+    .summary { margin-top: 12px; font-size: 13px; color: var(--muted); line-height: 1.5; }
+    .details { margin-top: 10px; font-size: 12px; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-word; }
+    .result { margin-top: 12px; background: rgba(8, 15, 29, 0.72); border:1px solid rgba(255,255,255,.09); border-radius: 10px; padding: 12px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top: 12px; }
+    input, select { padding: 10px 12px; border-radius: 10px; border: 1px solid #355a92; background:#0d1a2e; color:var(--text); font-size: 14px; }
+    button { border: none; border-radius: 10px; padding: 10px 16px; font-weight: 700; cursor:pointer; background: linear-gradient(135deg, var(--blue), #4378ff); color: white; font-size: 13px; }
     button.secondary { background: linear-gradient(135deg, #2a3d64, #1c3256); }
-    .result { margin-top: 16px; background: rgba(15, 23, 33, 0.7); border:1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 14px; color: var(--muted); min-height: 52px; }
-    .tiny { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-    .value { font-size: 38px; font-weight:800; margin-top: 4px; }
-    .payment-box { margin-top: 18px; display:flex; gap:10px; align-items:center; }
-    input[type="number"] { width: 170px; padding: 12px 14px; border-radius: 12px; border: 1px solid #355a92; background:#0d1a2e; color:white; }
-    .muted-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); font-size: 12px; }
-    @media (max-width: 900px) { .grid { grid-template-columns:1fr 1fr; } .hero { grid-template-columns:1fr; } }
+    button.success { background: linear-gradient(135deg, #22b88a, #118a66); }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    table { width:100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+    th, td { text-align:left; padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,.08); color: var(--muted); vertical-align: top; }
+    th { color: var(--text); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+    a.link { color: var(--blue); text-decoration: underline; word-break: break-all; }
+    ul.reasons { margin: 6px 0 0 18px; padding: 0; }
+    @media (max-width: 980px) { .grid { grid-template-columns:1fr 1fr; } .hero, .two-col, .three-col { grid-template-columns:1fr; } }
     @media (max-width: 600px) { .grid { grid-template-columns:1fr; } }
   </style>
 </head>
 <body>
   <div class="wrap">
     <header>
-      <div class="brand"><span>O3AI</span> Engine Console</div>
-      <div class="pill">Sandbox mode</div>
+      <div>
+        <div class="brand"><span>O3AI</span> Engine Console</div>
+        <div class="subtitle">Optimum Objective Operational AI — “O3AI proves the work before money moves.”</div>
+      </div>
+      <div class="nav-row">
+        <span class="pill" id="sandboxConfigPill">PayPal Sandbox</span>
+        <a class="pill" href="/customer">Customer Milestone Page →</a>
+      </div>
     </header>
+
+    <div class="banner">
+      <strong>Sandbox &amp; Trust Boundary:</strong> O3AI derives stage statuses strictly from <code>results/*.json</code>. PayPal calls target <code>https://api-m.sandbox.paypal.com</code> only. Offline scripts such as <code>scripts/issue_to_mr.py</code> are <strong>SIMULATION — NO PAYPAL REQUEST</strong> and never count as a PayPal transaction.
+    </div>
 
     <div class="hero">
       <div class="panel">
-        <div class="tiny">Overall engine state</div>
+        <div class="tiny">Authoritative O3AI Evidence &amp; Approval Gate</div>
         <div id="engineStatus" class="value">LOADING</div>
-        <div id="engineSummary" class="result">Fetching O3AI evidence…</div>
-        <div class="op-row">
-          <button id="approveBtn">Approve O3AI gate</button>
+        <div id="sessionMeta" class="details">Loading goal session...</div>
+        <div id="engineSummary" class="result">Fetching derived Tower statuses...</div>
+        <div class="row">
+          <input id="approveConfirmInput" type="text" placeholder="Type APPROVE to sign off" style="width:200px;" />
+          <button id="approveBtn">Approve O3AI Gate</button>
           <button id="refreshBtn" class="secondary">Refresh</button>
         </div>
       </div>
+
       <div class="panel">
-        <div class="tiny">Payment gate</div>
-        <div id="paymentState" class="value">WAITING</div>
-        <div class="payment-box">
-          <input id="amountInput" type="number" min="1" step="0.01" value="25" />
-          <button id="createOrderBtn">Create sandbox order</button>
+        <div class="tiny">Operator Authentication (Local / Token-Gated)</div>
+        <div id="authState" class="status PENDING">LOCKED</div>
+        <div class="summary">Operator actions (approve gate, configure milestone, create order, capture payment) require operator sign-in + CSRF session.</div>
+        <div class="row" id="loginRow">
+          <input id="operatorTokenInput" type="password" placeholder="Operator token (printed in terminal)" style="flex:1; min-width:210px;" />
+          <button id="loginBtn">Sign In</button>
         </div>
-        <div class="result" id="orderResult">No order created yet.</div>
+        <div class="row" id="logoutRow" style="display:none;">
+          <span class="details" style="margin:0;">Authenticated operator session active.</span>
+          <button id="logoutBtn" class="secondary">Sign Out</button>
+        </div>
+        <div id="actionFeedback" class="result">Ready.</div>
       </div>
     </div>
 
     <div class="grid" id="towerGrid"></div>
+
+    <div class="panel" style="margin-bottom:18px;">
+      <div class="tiny">PayPal Sandbox Execution (Downstream of O3AI Gate)</div>
+      <div class="row">
+        <input id="milestoneDescInput" type="text" placeholder="Milestone description (1-127 chars)" style="flex:1; min-width:220px;" />
+        <input id="amountInput" type="text" value="25.00" style="width:110px;" />
+        <input id="currencyInput" type="text" value="USD" maxlength="3" style="width:80px;" />
+        <button id="saveMilestoneBtn" class="secondary">Save Milestone</button>
+      </div>
+      <div class="row">
+        <input id="paypalConfirmInput" type="text" placeholder="Type APPROVE for PayPal action" style="width:220px;" />
+        <button id="createOrderBtn">1. Create Sandbox Order</button>
+        <button id="verifyOrderBtn" class="secondary">2. Verify Buyer Approval</button>
+        <button id="captureOrderBtn" class="success">3. Capture Approved Order</button>
+      </div>
+
+      <div class="three-col">
+        <div class="card">
+          <div class="tiny">PayPal Order State</div>
+          <div id="orderStatusBadge" class="status NOT_CREATED">NOT_CREATED</div>
+          <div id="orderDetails" class="details">No sandbox order created yet.</div>
+        </div>
+        <div class="card">
+          <div class="tiny">Buyer Approval State (PayPal)</div>
+          <div id="buyerStatusBadge" class="status NOT_STARTED">NOT_STARTED</div>
+          <div id="buyerDetails" class="details">Separate from O3AI operator approval.</div>
+        </div>
+        <div class="card">
+          <div class="tiny">Capture State</div>
+          <div id="captureStatusBadge" class="status NOT_CAPTURED">NOT_CAPTURED</div>
+          <div id="captureDetails" class="details">Not captured yet.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="panel">
+        <div class="tiny">Optional AI Planner Proposal (Never Evidence)</div>
+        <div id="aiProposalStatus" class="status NONE">NONE</div>
+        <div class="row">
+          <input id="aiGoalInput" type="text" placeholder="Bounded goal for optional AI proposal" style="flex:1; min-width:200px;" />
+          <button id="aiPlanBtn" class="secondary">Generate AI Proposal</button>
+        </div>
+        <div id="aiProposalBox" class="result">No AI proposal generated yet. AI output is stored as PROPOSAL_ONLY and cannot mark stages PASS or authorize PayPal.</div>
+      </div>
+
+      <div class="panel">
+        <div class="tiny">Activity &amp; Evidence Trail (Goal → Gate → Transaction)</div>
+        <div style="max-height:290px; overflow:auto;">
+          <table>
+            <thead>
+              <tr><th>Time</th><th>Event</th><th>Actor</th><th>Status</th><th>Linkage</th></tr>
+            </thead>
+            <tbody id="activityBody">
+              <tr><td colspan="5">No recorded activity yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
     const stageMeta = [
-      {key: 'planner', title: 'Planner'},
-      {key: 'builder', title: 'Builder'},
-      {key: 'security_qa', title: 'Security + QA'},
-      {key: 'release_monitor', title: 'Release + Monitor'}
+      {key: 'planner', title: 'Floor 1: Planner'},
+      {key: 'builder', title: 'Floor 2: Builder'},
+      {key: 'security_qa', title: 'Floor 3: Security & QA'},
+      {key: 'release_monitor', title: 'Floor 4: Release & Monitor'}
     ];
+
+    let csrfToken = null;
+    let operatorAuthed = false;
+    let latestStatus = null;
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[ch]));
+    }
+
+    function setFeedback(msg, ok = true) {
+      const box = document.getElementById('actionFeedback');
+      box.textContent = msg;
+      box.style.color = ok ? '#42e0b0' : '#ff6b6b';
+    }
+
+    async function refreshSession() {
+      const r = await fetch('/api/operator/session');
+      const data = await r.json();
+      operatorAuthed = Boolean(data.authenticated);
+      csrfToken = data.csrf_token || null;
+      const badge = document.getElementById('authState');
+      badge.textContent = operatorAuthed ? 'AUTHENTICATED' : 'LOCKED';
+      badge.className = 'status ' + (operatorAuthed ? 'PASS' : 'PENDING');
+      document.getElementById('loginRow').style.display = operatorAuthed ? 'none' : 'flex';
+      document.getElementById('logoutRow').style.display = operatorAuthed ? 'flex' : 'none';
+    }
+
+    async function operatorPost(url, body) {
+      if (!operatorAuthed || !csrfToken) {
+        setFeedback('Sign in as operator first.', false);
+        return null;
+      }
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken
+        },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        setFeedback(data.error || 'Request failed.', false);
+      }
+      return data;
+    }
 
     async function fetchStatus() {
       const r = await fetch('/api/status');
       const data = await r.json();
+      latestStatus = data;
       renderStatus(data);
-      return data;
     }
 
     function renderStatus(data) {
       const engineStatus = document.getElementById('engineStatus');
-      const engineSummary = document.getElementById('engineSummary');
-      const paymentState = document.getElementById('paymentState');
-      const towerGrid = document.getElementById('towerGrid');
-      const orderResult = document.getElementById('orderResult');
-
       engineStatus.textContent = data.status || 'BLOCKED';
-      engineStatus.style.color = data.status === 'READY' ? '#42e0b0' : '#ffb454';
-      engineSummary.textContent = data.approve?.verification_passed ? 'Human approval recorded. Payment path is open.' : 'Waiting for all O3AI tower results and human approval.';
+      engineStatus.style.color = data.status === 'READY' ? '#42e0b0' : '#ff6b6b';
 
-      const paymentOrder = data.payment?.order_id || 'none';
-      const paymentCapture = data.payment?.capture_id || 'none';
-      paymentState.textContent = paymentCapture !== 'none' ? 'CAPTURED' : paymentOrder !== 'none' ? 'ORDER READY' : 'WAITING';
-      paymentState.style.color = paymentCapture !== 'none' ? '#42e0b0' : '#5ec3ff';
+      const pill = document.getElementById('sandboxConfigPill');
+      pill.textContent = data.paypal?.configured ? 'PayPal Sandbox Configured' : 'PayPal Credentials Missing';
 
-      if (paymentOrder !== 'none') {
-        orderResult.textContent = `Order: ${paymentOrder}${paymentCapture !== 'none' ? ' | Capture: ' + paymentCapture : ''}`;
+      const sessionMeta = document.getElementById('sessionMeta');
+      if (data.session?.exists) {
+        sessionMeta.textContent = `Session: ${data.session.session_id || 'N/A'} | Issue #${data.session.issue_id ?? '-'} — ${data.session.title || ''}`;
       } else {
-        orderResult.textContent = 'No order created yet.';
+        sessionMeta.textContent = 'No results/session.json loaded yet.';
       }
 
+      const engineSummary = document.getElementById('engineSummary');
+      if (data.status === 'READY') {
+        engineSummary.innerHTML = `<span style="color:#42e0b0;font-weight:700;">READY:</span> All 4 O3AI Tower floors and operator approval (${escapeHtml(data.approve?.approved_by || 'operator')}) verified.`;
+      } else {
+        const items = (data.blocked_reasons || []).map((reason) => `<li>${escapeHtml(reason)}</li>`).join('');
+        engineSummary.innerHTML = `<span style="color:#ff6b6b;font-weight:700;">BLOCKED:</span> Payment &amp; customer checkout disabled.<ul class="reasons">${items}</ul>`;
+      }
+
+      const descInput = document.getElementById('milestoneDescInput');
+      const amtInput = document.getElementById('amountInput');
+      const curInput = document.getElementById('currencyInput');
+      if (!descInput.dataset.dirty && data.milestone) {
+        descInput.value = data.milestone.description || '';
+        amtInput.value = data.milestone.amount || '25.00';
+        curInput.value = data.milestone.currency || 'USD';
+      }
+
+      const towerGrid = document.getElementById('towerGrid');
       towerGrid.innerHTML = stageMeta.map((stage) => {
-        const d = data.stages[stage.key] || {status: 'PENDING', summary: 'Not started'};
-        const statusClass = d.status || 'PENDING';
+        const d = (data.stages && data.stages[stage.key]) || {status: 'PENDING', summary: 'Not started', evidence: {}};
+        const st = escapeHtml(d.status || 'PENDING');
+        const evPairs = Object.entries(d.evidence || {}).slice(0, 4)
+          .map(([k, v]) => `${escapeHtml(k)}: ${escapeHtml(typeof v === 'object' ? JSON.stringify(v) : v)}`)
+          .join('<br>');
         return `
           <div class="card">
-            <div class="tiny">${stage.title}</div>
-            <div class="status ${statusClass}">${statusClass}</div>
-            <div class="summary">${d.summary || 'No summary available.'}</div>
-            <div class="details">${Object.keys(d.evidence || {}).slice(0, 3).map((key) => `${key}: ${d.evidence[key]}`).join(' • ') || 'No structured evidence yet.'}</div>
+            <div class="tiny">${escapeHtml(stage.title)}</div>
+            <div class="status ${st}">${st}</div>
+            <div class="summary">${escapeHtml(d.summary || '')}</div>
+            <div class="details">${evPairs || 'No structured evidence recorded.'}</div>
           </div>
         `;
       }).join('');
+
+      const ord = data.paypal?.order || {};
+      const ordBadge = document.getElementById('orderStatusBadge');
+      ordBadge.textContent = ord.state || 'NOT_CREATED';
+      ordBadge.className = 'status ' + escapeHtml(ord.state || 'NOT_CREATED');
+      const ordDetails = document.getElementById('orderDetails');
+      if (ord.exists) {
+        const safeUrl = ord.approval_url && ord.approval_url.startsWith('https://') ? ord.approval_url : '';
+        ordDetails.innerHTML = `Order ID: ${escapeHtml(ord.order_id)}<br>Amount: ${escapeHtml(ord.amount)} ${escapeHtml(ord.currency)}<br>`
+          + (safeUrl ? `<a class="link" href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener">Open PayPal Approval URL</a>` : 'No approval URL');
+      } else {
+        ordDetails.textContent = 'No sandbox order created yet.';
+      }
+
+      const buyer = data.paypal?.buyer_approval || {};
+      const buyerBadge = document.getElementById('buyerStatusBadge');
+      buyerBadge.textContent = buyer.state || 'NOT_STARTED';
+      buyerBadge.className = 'status ' + escapeHtml(buyer.state || 'NOT_STARTED');
+      document.getElementById('buyerDetails').textContent = buyer.buyer_approved
+        ? `Confirmed by PayPal at ${buyer.verified_at || 'verified'}`
+        : 'Requires buyer sign-in & approval on PayPal Sandbox.';
+
+      const cap = data.paypal?.capture || {};
+      const capBadge = document.getElementById('captureStatusBadge');
+      capBadge.textContent = cap.state || 'NOT_CAPTURED';
+      capBadge.className = 'status ' + escapeHtml(cap.state || 'NOT_CAPTURED');
+      const capDetails = document.getElementById('captureDetails');
+      if (cap.state === 'COMPLETED') {
+        capDetails.textContent = `Capture ID: ${cap.capture_id} (${cap.environment}) at ${cap.timestamp || ''}`;
+      } else if (cap.state === 'FAILED') {
+        capDetails.textContent = cap.error_summary || 'Capture failed.';
+      } else {
+        capDetails.textContent = 'Blocked until O3AI gate is READY and buyer approves order.';
+      }
+
+      const gateReady = data.status === 'READY';
+      document.getElementById('createOrderBtn').disabled = !gateReady;
+      document.getElementById('verifyOrderBtn').disabled = !ord.exists;
+      document.getElementById('captureOrderBtn').disabled = !(gateReady && ord.exists && buyer.buyer_approved && cap.state !== 'COMPLETED');
+
+      const ai = data.ai_proposal || {};
+      const aiBadge = document.getElementById('aiProposalStatus');
+      aiBadge.textContent = ai.status || 'NONE';
+      aiBadge.className = 'status ' + escapeHtml(ai.status || 'NONE');
+      const aiBox = document.getElementById('aiProposalBox');
+      if (ai.exists) {
+        const tasksHtml = (ai.tasks || []).map((t) => `<li><strong>${escapeHtml(t.task_id)}</strong>: ${escapeHtml(t.name)}</li>`).join('');
+        aiBox.innerHTML = `<strong>${escapeHtml(ai.verification_note || 'PROPOSAL_ONLY')}</strong><br>${escapeHtml(ai.summary || '')}<ul>${tasksHtml}</ul>`;
+      } else {
+        aiBox.textContent = 'No AI proposal generated yet. AI output is stored as PROPOSAL_ONLY and cannot mark stages PASS or authorize PayPal.';
+      }
+
+      const tbody = document.getElementById('activityBody');
+      const trail = data.activity_trail || [];
+      if (!trail.length) {
+        tbody.innerHTML = '<tr><td colspan="5">No recorded activity yet.</td></tr>';
+      } else {
+        tbody.innerHTML = trail.map((item) => `
+          <tr>
+            <td>${escapeHtml((item.timestamp || '').slice(0, 19))}</td>
+            <td>${escapeHtml(item.event || '')}</td>
+            <td>${escapeHtml(item.actor || '')}</td>
+            <td>${escapeHtml(item.status || '')}</td>
+            <td>${escapeHtml(JSON.stringify({session: item.session_id, ...(item.details || {})}))}</td>
+          </tr>
+        `).join('');
+      }
     }
 
-    async function approveGate() {
-      const res = await fetch('/api/approve', {method: 'POST'});
-      const data = await res.json();
-      alert(data.message || 'Approval result');
-      fetchStatus();
-    }
+    ['milestoneDescInput', 'amountInput', 'currencyInput'].forEach((id) => {
+      document.getElementById(id).addEventListener('input', (e) => { e.target.dataset.dirty = '1'; });
+    });
 
-    async function createOrder() {
-      const amount = document.getElementById('amountInput').value;
-      const res = await fetch('/api/create-order', {
+    document.getElementById('loginBtn').addEventListener('click', async () => {
+      const token = document.getElementById('operatorTokenInput').value;
+      const res = await fetch('/api/operator/login', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ amount, description: 'Verified milestone payment' })
+        body: JSON.stringify({token})
       });
       const data = await res.json();
-      alert(data.demo ? 'Demo sandbox order created locally.' : 'Sandbox order created.');
-      fetchStatus();
-    }
+      if (res.ok && data.ok) {
+        document.getElementById('operatorTokenInput').value = '';
+        await refreshSession();
+        setFeedback('Operator signed in.', true);
+      } else {
+        setFeedback(data.error || 'Invalid operator token.', false);
+      }
+    });
 
-    document.getElementById('approveBtn').addEventListener('click', approveGate);
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await fetch('/api/operator/logout', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'});
+      await refreshSession();
+      setFeedback('Operator signed out.', true);
+    });
+
+    document.getElementById('approveBtn').addEventListener('click', async () => {
+      const confirm_phrase = document.getElementById('approveConfirmInput').value.trim();
+      const data = await operatorPost('/api/operator/approve', {confirm_phrase});
+      if (data && data.ok) {
+        document.getElementById('approveConfirmInput').value = '';
+        setFeedback(data.message || 'Operator approval recorded.', true);
+        await fetchStatus();
+      }
+    });
+
+    document.getElementById('saveMilestoneBtn').addEventListener('click', async () => {
+      const description = document.getElementById('milestoneDescInput').value.trim();
+      const amount = document.getElementById('amountInput').value.trim();
+      const currency = document.getElementById('currencyInput').value.trim().toUpperCase();
+      const data = await operatorPost('/api/operator/milestone', {title: description, description, amount, currency});
+      if (data && data.ok) {
+        setFeedback('Milestone saved.', true);
+        await fetchStatus();
+      }
+    });
+
+    document.getElementById('createOrderBtn').addEventListener('click', async () => {
+      const confirm_phrase = document.getElementById('paypalConfirmInput').value.trim();
+      const description = document.getElementById('milestoneDescInput').value.trim();
+      const amount = document.getElementById('amountInput').value.trim();
+      const currency = document.getElementById('currencyInput').value.trim().toUpperCase();
+      const data = await operatorPost('/api/operator/create-order', {confirm_phrase, description, amount, currency});
+      if (data && data.ok) {
+        document.getElementById('paypalConfirmInput').value = '';
+        setFeedback(`Sandbox order created: ${data.order.order_id}`, true);
+        await fetchStatus();
+      }
+    });
+
+    document.getElementById('verifyOrderBtn').addEventListener('click', async () => {
+      const order_id = latestStatus?.paypal?.order?.order_id || '';
+      const data = await operatorPost('/api/operator/verify-order', {order_id});
+      if (data && data.ok) {
+        setFeedback(`Order ${data.order.order_id} status: ${data.order.order_status} (buyer_approved=${data.order.buyer_approved})`, true);
+        await fetchStatus();
+      }
+    });
+
+    document.getElementById('captureOrderBtn').addEventListener('click', async () => {
+      const confirm_phrase = document.getElementById('paypalConfirmInput').value.trim();
+      const order_id = latestStatus?.paypal?.order?.order_id || '';
+      const data = await operatorPost('/api/operator/capture-order', {confirm_phrase, order_id});
+      if (data && data.ok) {
+        document.getElementById('paypalConfirmInput').value = '';
+        setFeedback(`Sandbox capture COMPLETED: ${data.capture.capture_id}`, true);
+        await fetchStatus();
+      }
+    });
+
+    document.getElementById('aiPlanBtn').addEventListener('click', async () => {
+      const goal = document.getElementById('aiGoalInput').value.trim();
+      const data = await operatorPost('/api/operator/ai-plan', {goal});
+      if (data && data.ok) {
+        setFeedback(`AI proposal saved (${data.proposal.tasks.length} DAG tasks).`, true);
+        await fetchStatus();
+      }
+    });
+
     document.getElementById('refreshBtn').addEventListener('click', fetchStatus);
-    document.getElementById('createOrderBtn').addEventListener('click', createOrder);
-    fetchStatus();
+
+    refreshSession().then(fetchStatus);
   </script>
 </body>
 </html>
