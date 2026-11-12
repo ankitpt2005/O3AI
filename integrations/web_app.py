@@ -187,6 +187,9 @@ def _collect_approval_state(
         effective_status = "STALE"
     elif raw_status == "PASS" and verification_passed:
         effective_status = "PASS"
+    elif raw_status == "FAIL" and ev_dict.get("rejected_by"):
+        blocked_reasons.append("Operator rejected the O3AI evidence gate; explicit re-approval is required.")
+        effective_status = "FAIL"
     else:
         blocked_reasons.append(f"Operator approval status is {raw_status} (verification_passed={verification_passed}).")
         effective_status = "FAIL" if raw_status == "FAIL" else "PENDING"
@@ -687,7 +690,58 @@ class O3AIWebApp:
             return self._handle_capture_order(payload)
         if path == "/api/operator/ai-plan":
             return self._handle_ai_plan(payload)
+        if path == "/api/operator/reject":
+            return self._handle_reject(payload)
         return self._json_response(404, {"ok": False, "error": "Endpoint not found."})
+
+    def _handle_reject(self, payload: dict[str, Any]) -> tuple[int, list[tuple[str, str]], bytes]:
+        """Record an explicit operator rejection; PayPal actions stay blocked until re-approval."""
+        if payload.get("confirm_phrase") != "REJECT":
+            return self._json_response(400, {"ok": False, "error": "Explicit operator confirmation ('REJECT') is required."})
+        raw_reason = payload.get("reason")
+        if raw_reason is not None and not isinstance(raw_reason, str):
+            return self._json_response(400, {"ok": False, "error": "Rejection reason must be text."})
+        reason = sanitize_untrusted_text(raw_reason or "")
+        if len(reason) > 300:
+            return self._json_response(400, {"ok": False, "error": "Rejection reason must be at most 300 characters."})
+
+        cap_doc = _read_json_safe(self.results_dir / "paypal_capture.json")
+        if cap_doc and cap_doc.get("status") == "PASS":
+            return self._json_response(409, {"ok": False, "error": "Cannot reject after payment capture completed."})
+
+        _, timestamps, _ = _collect_floor_states(self.results_dir)
+        summary = "Authenticated operator rejected the O3AI evidence gate."
+        if reason:
+            summary = f"{summary} Reason: {reason}"
+        rejection_doc = {
+            "stage": "approve",
+            "status": "FAIL",
+            "summary": summary,
+            "evidence": {
+                "rejected_by": "developer_operator",
+                "prerequisites_checked": list(REQUIRED_TOWER_STAGES),
+                "verification_passed": False,
+                "rejection_reason": reason,
+                "stage_timestamps": timestamps,
+            },
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+        _write_json_safe(self.results_dir, "approve.json", rejection_doc)
+        _append_activity(
+            self.results_dir,
+            "operator_rejected",
+            "developer_operator",
+            "FAIL",
+            {"reason": reason} if reason else None,
+        )
+        return self._json_response(
+            200,
+            {
+                "ok": True,
+                "message": "Operator rejection recorded. PayPal actions are blocked until explicit re-approval.",
+                "approve": rejection_doc,
+            },
+        )
 
     def _handle_init_session(self, payload: dict[str, Any]) -> tuple[int, list[tuple[str, str]], bytes]:
         cap_doc = _read_json_safe(self.results_dir / "paypal_capture.json")

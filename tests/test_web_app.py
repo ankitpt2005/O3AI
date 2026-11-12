@@ -9,7 +9,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from integrations.paypal import PayPalSandboxClient, PayPalWorkflowError
-from o3ai.web_app import O3AIWebApp, create_server
+from integrations.web_app import O3AIWebApp, create_server
 
 
 def _write_passing_floors(results_dir: Path) -> None:

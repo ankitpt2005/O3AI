@@ -79,6 +79,11 @@
           <button id="approveBtn">Approve O3AI Gate</button>
           <button id="refreshBtn" class="secondary">Refresh</button>
         </div>
+        <div class="row">
+          <input id="rejectConfirmInput" type="text" placeholder="Type REJECT to decline" style="width:200px;" />
+          <input id="rejectReasonInput" type="text" maxlength="300" placeholder="Reason (optional, max 300 chars)" style="flex:1; min-width:200px;" />
+          <button id="rejectBtn" style="background: linear-gradient(135deg, #ff6b6b, #c0392b);">Reject O3AI Gate</button>
+        </div>
       </div>
 
       <div class="panel">
@@ -417,6 +422,18 @@
       if (data && data.ok) {
         document.getElementById('approveConfirmInput').value = '';
         setFeedback(data.message || 'Operator approval recorded.', true);
+        await fetchStatus();
+      }
+    });
+
+    document.getElementById('rejectBtn').addEventListener('click', async () => {
+      const confirm_phrase = document.getElementById('rejectConfirmInput').value.trim();
+      const reason = document.getElementById('rejectReasonInput').value.trim();
+      const data = await operatorPost('/api/operator/reject', {confirm_phrase, reason});
+      if (data && data.ok) {
+        document.getElementById('rejectConfirmInput').value = '';
+        document.getElementById('rejectReasonInput').value = '';
+        setFeedback(data.message || 'Operator rejection recorded.', false);
         await fetchStatus();
       }
     });

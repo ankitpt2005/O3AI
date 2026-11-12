@@ -21,10 +21,11 @@ flowchart LR
 
 ## Architecture Boundaries
 
-- **Offline Core (`o3ai/`)**: Goal sessions, untrusted input framing, DAG validation, deterministic evidence derivation, reports, and local web UI coordination. Contains zero external network clients.
+- **Offline Core (`o3ai/`)**: Goal sessions, untrusted input framing, DAG validation, deterministic evidence derivation, and reports. Contains zero network clients or servers and never imports `integrations/` (enforced by `tests/test_core_boundary.py`).
 - **External Integrations (`integrations/`)**:
   - `integrations/paypal.py`: Sandbox-only PayPal REST client fixed to `https://api-m.sandbox.paypal.com` (live hosts are not configurable).
   - `integrations/ai_planner.py`: Optional HTTPS-only OpenAI-compatible planner proposal client.
+  - `integrations/web_app.py`: Local operator console and customer page server. It drives the PayPal and AI clients, so it lives outside the core.
 - **Offline Simulation (`scripts/issue_to_mr.py`)**: Labeled **SIMULATION — NO PAYPAL REQUEST**. Reproduces the GitLab Duo Issue-to-MR workflow locally for deterministic tests and never interacts with PayPal.
 
 ## PayPal Sandbox Account & App Setup
@@ -77,7 +78,7 @@ python scripts/run_web_ui.py
 
 1. **Blocked Baseline**: Start `python scripts/run_web_ui.py` with empty `results/` (or after `python scripts/demo_reset.py`). Open `http://127.0.0.1:8080/` and `http://127.0.0.1:8080/customer` to show `BLOCKED` status—no fake `PASS` data is fabricated.
 2. **Run O3AI Verification**: Run `python scripts/run_demo.py` (offline Duo simulation + 7-stage verification pipeline) or generate real floor evidence in `results/*.json`. Refresh `/` to see all 4 floors `PASS`.
-3. **Operator Sign-In & Approval**: Enter the operator token in the Operator Console, type `APPROVE`, and click **Approve O3AI Gate**.
+3. **Operator Sign-In & Approval**: Enter the operator token in the Operator Console, type `APPROVE`, and click **Approve O3AI Gate**. To decline instead, type `REJECT` (with an optional reason) and click **Reject O3AI Gate**: this records a `FAIL` decision in `results/approve.json` and blocks order creation and capture until an explicit re-approval.
 4. **Create PayPal Sandbox Order**: Configure milestone amount/currency/description, type `APPROVE`, and click **1. Create Sandbox Order** (or run `python scripts/paypal_demo.py create-order --amount 25.00 --currency USD --description "Verified milestone"`).
 5. **Customer Buyer Approval on PayPal Sandbox**: Open `http://127.0.0.1:8080/customer`, click **Continue to PayPal Sandbox**, and approve using the **Sandbox Personal buyer** account. PayPal returns to `/customer?paypal=return&token=...` and backend verifies `order_status == APPROVED`.
 6. **Explicit Operator Capture**: Back on `/`, confirm **Buyer Approval State** is `APPROVED`, type `APPROVE`, and click **3. Capture Approved Order**. O3AI rechecks all 4 Tower floors, checks approval freshness, calls PayPal Sandbox capture, and writes `results/paypal_capture.json` only if PayPal returns `COMPLETED`.

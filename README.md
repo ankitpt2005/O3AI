@@ -158,7 +158,7 @@ python -m o3ai.cli generate-report
 ```
 
 ### 7. PayPal Sandbox Web UI & Optional AI Planner (Downstream of O3AI)
-O3AI remains the core verification engine ("O3AI proves the work before money moves"). External network clients live in `integrations/` (`integrations/paypal.py` and `integrations/ai_planner.py`), keeping `o3ai/` offline and network-free:
+O3AI remains the core verification engine ("O3AI proves the work before money moves"). External network clients and the local web server live in `integrations/` (`integrations/paypal.py`, `integrations/ai_planner.py`, and `integrations/web_app.py`), keeping `o3ai/` offline and network-free:
 
 - **Developer / Operator Console (`/`) & Customer Milestone Page (`/customer`)**:
   ```powershell
