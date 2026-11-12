@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>O3AI Engine Console</title>
+  <style>
+    :root {
+      --bg:#071528; --panel:#111f39; --card:#0f213e; --soft:#1c3256; --text:#eef6ff; --muted:#a6bbd5; --green:#42e0b0; --yellow:#f7c768; --red:#ff6b6b; --blue:#5ec3ff; --pink:#d39bff; --shadow:0 8px 24px rgba(0,0,0,0.35);
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: Inter, Segoe UI, sans-serif; background: radial-gradient(circle at top left, #12315d 0%, var(--bg) 35%, #071528 100%); color:var(--text); }
+    .wrap { max-width: 1280px; margin: 22px auto; padding: 0 20px 40px; }
+    header { display:flex; justify-content:space-between; align-items:center; margin-bottom: 26px; }
+    .brand { font-size: 28px; font-weight: 800; }
+    .brand span { color: var(--blue); }
+    .pill { background: rgba(94,195,255,.12); color: var(--blue); border:1px solid rgba(94,195,255,.6); padding: 9px 16px; border-radius: 999px; font-weight: 700; }
+    .grid { display:grid; grid-template-columns: repeat(4, minmax(220px,1fr)); gap:18px; }
+    .card { background: rgba(17,31,57,.92); border: 1px solid rgba(112,146,190,.4); border-radius: 18px; box-shadow: var(--shadow); padding: 18px 18px 14px; }
+    .card h3 { margin: 0 0 8px; font-size: 17px; }
+    .status { display:inline-block; padding: 6px 10px; border-radius:999px; font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+    .PASS { background: rgba(66,224,176,.15); color: var(--green); border:1px solid rgba(66,224,176,.45); }
+    .FAIL { background: rgba(255,107,107,.14); color: var(--red); border:1px solid rgba(255,107,107,.45); }
+    .PENDING { background: rgba(247,199,104,.14); color: var(--yellow); border:1px solid rgba(247,199,104,.45); }
+    .summary { margin-top: 16px; font-size: 14px; color: var(--muted); line-height: 1.6; }
+    .details { margin-top: 12px; font-size: 12px; color: var(--muted); }
+    .hero { display:grid; grid-template-columns: 1.3fr .7fr; gap:18px; margin-bottom: 20px; }
+    .panel { background: rgba(17,31,57,.92); border:1px solid rgba(112,146,190,.4); border-radius: 18px; box-shadow: var(--shadow); padding: 20px; }
+    .panel h2 { margin: 0 0 12px; }
+    .op-row { display:flex; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+    button { border: none; border-radius: 12px; padding: 12px 18px; font-weight: 800; cursor:pointer; background: linear-gradient(135deg, var(--blue), #5d8bff); color: white; }
+    button.secondary { background: linear-gradient(135deg, #2a3d64, #1c3256); }
+    .result { margin-top: 16px; background: rgba(15, 23, 33, 0.7); border:1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 14px; color: var(--muted); min-height: 52px; }
+    .tiny { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+    .value { font-size: 38px; font-weight:800; margin-top: 4px; }
+    .payment-box { margin-top: 18px; display:flex; gap:10px; align-items:center; }
+    input[type="number"] { width: 170px; padding: 12px 14px; border-radius: 12px; border: 1px solid #355a92; background:#0d1a2e; color:white; }
+    .muted-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); font-size: 12px; }
+    @media (max-width: 900px) { .grid { grid-template-columns:1fr 1fr; } .hero { grid-template-columns:1fr; } }
+    @media (max-width: 600px) { .grid { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand"><span>O3AI</span> Engine Console</div>
+      <div class="pill">Sandbox mode</div>
+    </header>
+
+    <div class="hero">
+      <div class="panel">
+        <div class="tiny">Overall engine state</div>
+        <div id="engineStatus" class="value">LOADING</div>
+        <div id="engineSummary" class="result">Fetching O3AI evidence…</div>
+        <div class="op-row">
+          <button id="approveBtn">Approve O3AI gate</button>
+          <button id="refreshBtn" class="secondary">Refresh</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="tiny">Payment gate</div>
+        <div id="paymentState" class="value">WAITING</div>
+        <div class="payment-box">
+          <input id="amountInput" type="number" min="1" step="0.01" value="25" />
+          <button id="createOrderBtn">Create sandbox order</button>
+        </div>
+        <div class="result" id="orderResult">No order created yet.</div>
+      </div>
+    </div>
+
+    <div class="grid" id="towerGrid"></div>
+  </div>
+
+  <script>
+    const stageMeta = [
+      {key: 'planner', title: 'Planner'},
+      {key: 'builder', title: 'Builder'},
+      {key: 'security_qa', title: 'Security + QA'},
+      {key: 'release_monitor', title: 'Release + Monitor'}
+    ];
+
+    async function fetchStatus() {
+      const r = await fetch('/api/status');
+      const data = await r.json();
+      renderStatus(data);
+      return data;
+    }
+
+    function renderStatus(data) {
+      const engineStatus = document.getElementById('engineStatus');
+      const engineSummary = document.getElementById('engineSummary');
+      const paymentState = document.getElementById('paymentState');
+      const towerGrid = document.getElementById('towerGrid');
+      const orderResult = document.getElementById('orderResult');
+
+      engineStatus.textContent = data.status || 'BLOCKED';
+      engineStatus.style.color = data.status === 'READY' ? '#42e0b0' : '#ffb454';
+      engineSummary.textContent = data.approve?.verification_passed ? 'Human approval recorded. Payment path is open.' : 'Waiting for all O3AI tower results and human approval.';
+
+      const paymentOrder = data.payment?.order_id || 'none';
+      const paymentCapture = data.payment?.capture_id || 'none';
+      paymentState.textContent = paymentCapture !== 'none' ? 'CAPTURED' : paymentOrder !== 'none' ? 'ORDER READY' : 'WAITING';
+      paymentState.style.color = paymentCapture !== 'none' ? '#42e0b0' : '#5ec3ff';
+
+      if (paymentOrder !== 'none') {
+        orderResult.textContent = `Order: ${paymentOrder}${paymentCapture !== 'none' ? ' | Capture: ' + paymentCapture : ''}`;
+      } else {
+        orderResult.textContent = 'No order created yet.';
+      }
+
+      towerGrid.innerHTML = stageMeta.map((stage) => {
+        const d = data.stages[stage.key] || {status: 'PENDING', summary: 'Not started'};
+        const statusClass = d.status || 'PENDING';
+        return `
+          <div class="card">
+            <div class="tiny">${stage.title}</div>
+            <div class="status ${statusClass}">${statusClass}</div>
+            <div class="summary">${d.summary || 'No summary available.'}</div>
+            <div class="details">${Object.keys(d.evidence || {}).slice(0, 3).map((key) => `${key}: ${d.evidence[key]}`).join(' • ') || 'No structured evidence yet.'}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function approveGate() {
+      const res = await fetch('/api/approve', {method: 'POST'});
+      const data = await res.json();
+      alert(data.message || 'Approval result');
+      fetchStatus();
+    }
+
+    async function createOrder() {
+      const amount = document.getElementById('amountInput').value;
+      const res = await fetch('/api/create-order', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ amount, description: 'Verified milestone payment' })
+      });
+      const data = await res.json();
+      alert(data.demo ? 'Demo sandbox order created locally.' : 'Sandbox order created.');
+      fetchStatus();
+    }
+
+    document.getElementById('approveBtn').addEventListener('click', approveGate);
+    document.getElementById('refreshBtn').addEventListener('click', fetchStatus);
+    document.getElementById('createOrderBtn').addEventListener('click', createOrder);
+    fetchStatus();
+  </script>
+</body>
+</html>
