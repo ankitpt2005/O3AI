@@ -45,7 +45,8 @@ def _header(headers: list[tuple[str, str]], name: str) -> str:
 class WebAppTests(unittest.TestCase):
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory()
-        self.results_dir = Path(self.tmp.name)
+        self.results_dir = Path(self.tmp.name) / "results"
+        self.results_dir.mkdir(parents=True, exist_ok=True)
         self.web_dir = Path(__file__).resolve().parent.parent / "web"
         self.mock_client = PayPalSandboxClient("sandbox-id", "sandbox-secret")
         self.app = O3AIWebApp(
@@ -95,6 +96,8 @@ class WebAppTests(unittest.TestCase):
     def test_operator_endpoints_require_auth_and_csrf(self) -> None:
         _write_passing_floors(self.results_dir)
         for path in (
+            "/api/operator/init-session",
+            "/api/operator/run-checks",
             "/api/operator/approve",
             "/api/operator/create-order",
             "/api/operator/capture-order",
@@ -397,6 +400,74 @@ class WebAppTests(unittest.TestCase):
             headers={"Cookie": cookie, "X-CSRF-Token": csrf},
         )
         self.assertEqual(status, 401)
+
+    def test_missing_approval_stage_timestamps_marks_stale_and_blocks(self) -> None:
+        _write_passing_floors(self.results_dir)
+        (self.results_dir / "approve.json").write_text(
+            json.dumps(
+                {
+                    "stage": "approve",
+                    "status": "PASS",
+                    "evidence": {"verification_passed": True, "approved_by": "legacy"},
+                    "timestamp": "2026-11-12T10:01:00Z",
+                }
+            ),
+            encoding="utf-8",
+        )
+        _, _, dash_text = self._req("GET", "/api/status")
+        dash = json.loads(dash_text)
+        self.assertEqual(dash["status"], "BLOCKED")
+        self.assertEqual(dash["approve"]["status"], "STALE")
+        self.assertTrue(dash["approve"]["stale"])
+
+    def test_init_session_and_run_checks_endpoints(self) -> None:
+        def stub_checks(results_dir: Path, issue: object) -> dict:
+            _write_passing_floors(results_dir)
+            return {"lint_ok": True, "tests_ok": True, "tests_run": 82, "sec_ok": True, "secrets_found": 0}
+
+        self.app.checks_runner_fn = stub_checks
+        cookie, csrf = self._login()
+        headers = {"Cookie": cookie, "X-CSRF-Token": csrf}
+
+        # run-checks requires an active goal session first
+        status, _, _ = self._req("POST", "/api/operator/run-checks", {}, headers=headers)
+        self.assertEqual(status, 409)
+
+        # Reject >35-word bounded title
+        long_title = " ".join(["word"] * 36)
+        status, _, _ = self._req(
+            "POST",
+            "/api/operator/init-session",
+            {"issue_id": 102, "title": long_title, "description": "Valid"},
+            headers=headers,
+        )
+        self.assertEqual(status, 400)
+
+        # Valid session creation clears stale downstream files and runs checks cleanly
+        (self.results_dir / "approve.json").write_text('{"status": "PASS"}', encoding="utf-8")
+        status, _, init_text = self._req(
+            "POST",
+            "/api/operator/init-session",
+            {
+                "issue_id": 102,
+                "title": "Verify email validation milestone",
+                "description": "Ensure unit tests and security gate pass.",
+                "amount": "15.00",
+                "currency": "USD",
+            },
+            headers=headers,
+        )
+        self.assertEqual(status, 200)
+        self.assertTrue(json.loads(init_text)["ok"])
+        self.assertTrue((self.results_dir / "session.json").is_file())
+        self.assertFalse((self.results_dir / "approve.json").exists())
+
+        status, _, run_text = self._req("POST", "/api/operator/run-checks", {}, headers=headers)
+        self.assertEqual(status, 200)
+        run_data = json.loads(run_text)
+        self.assertTrue(run_data["checks"]["tests_ok"])
+        for stage in ("planner", "builder", "security_qa", "release_monitor"):
+            self.assertEqual(run_data["stages"][stage]["status"], "PASS")
 
 
 if __name__ == "__main__":

@@ -8,7 +8,9 @@ _root = Path(__file__).resolve().parent.parent
 if str(_root) not in sys.path:
     sys.path.insert(0, str(_root))
 
+from integrations.env import load_dotenv
 from o3ai.web_app import main
 
 if __name__ == "__main__":
+    load_dotenv(_root)
     raise SystemExit(main())

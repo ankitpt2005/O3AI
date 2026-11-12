@@ -10,6 +10,7 @@ if str(_root) not in sys.path:
     sys.path.insert(0, str(_root))
 
 from integrations.ai_planner import AIPlannerError, create_ai_plan
+from integrations.env import load_dotenv
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -17,6 +18,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--goal", required=True, help="A single bounded goal to plan")
     parser.add_argument("--output", type=Path, default=Path("results/ai_plan.json"))
     args = parser.parse_args(argv)
+    load_dotenv(_root)
     try:
         result = create_ai_plan(args.goal, args.output)
     except AIPlannerError as exc:

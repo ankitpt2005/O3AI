@@ -38,6 +38,18 @@ def main() -> int:
     passed, reasons = verify_prerequisites(results_dir)
     out_file = results_dir / "approve.json"
 
+    stage_timestamps: dict[str, str] = {}
+    for floor in ("planner", "builder", "security_qa", "release_monitor"):
+        floor_file = results_dir / f"{floor}.json"
+        if floor_file.is_file():
+            try:
+                floor_data = json.loads(floor_file.read_text(encoding="utf-8"))
+                ts = floor_data.get("timestamp")
+                if isinstance(ts, str) and ts.strip():
+                    stage_timestamps[floor] = ts
+            except (OSError, json.JSONDecodeError):
+                pass
+
     payload = {
         "stage": "approve",
         "status": "PASS" if passed else "FAIL",
@@ -46,6 +58,7 @@ def main() -> int:
             "prerequisites_checked": PREREQUISITE_STAGES,
             "verification_passed": passed,
             "issues": reasons,
+            **({"stage_timestamps": stage_timestamps} if len(stage_timestamps) == 4 else {}),
         },
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }

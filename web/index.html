@@ -97,6 +97,20 @@
       </div>
     </div>
 
+    <div class="panel" style="margin-bottom:18px;">
+      <div class="tiny">Step 1 &amp; 2: O3AI Goal Session &amp; Deterministic Verification Engine</div>
+      <div class="summary">Create one bounded Goal Session (&le;35 words), then run real deterministic verification (`lint`, `unittest`, `security_check`, and Working Tower stages). Evidence is derived from actual outputs&mdash;never fabricated.</div>
+      <div class="row">
+        <input id="goalTitleInput" type="text" value="Validate signup email format and minimum password length" placeholder="Bounded Goal Title (max 35 words)" style="flex:2; min-width:260px;" />
+        <input id="goalIssueIdInput" type="number" value="101" min="1" placeholder="Issue #" style="width:90px;" />
+      </div>
+      <div class="row">
+        <input id="goalDescInput" type="text" value="Verify unit tests pass, zero hardcoded secrets exist, and release evidence is complete before PayPal payout." placeholder="Goal description (sanitized as untrusted data only)" style="flex:1; min-width:260px;" />
+        <button id="initSessionBtn" class="secondary">1. Initialize Goal Session</button>
+        <button id="runChecksBtn">2. Run Tower Verification</button>
+      </div>
+    </div>
+
     <div class="grid" id="towerGrid"></div>
 
     <div class="panel" style="margin-bottom:18px;">
@@ -365,6 +379,36 @@
       await fetch('/api/operator/logout', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'});
       await refreshSession();
       setFeedback('Operator signed out.', true);
+    });
+
+    document.getElementById('initSessionBtn').addEventListener('click', async () => {
+      const title = document.getElementById('goalTitleInput').value.trim();
+      const description = document.getElementById('goalDescInput').value.trim();
+      const issue_id = Number(document.getElementById('goalIssueIdInput').value || 101);
+      const data = await operatorPost('/api/operator/init-session', {issue_id, title, description});
+      if (data && data.ok) {
+        setFeedback(data.message || 'Goal session initialized.', true);
+        await fetchStatus();
+      }
+    });
+
+    document.getElementById('runChecksBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('runChecksBtn');
+      const prevText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Running checks...';
+      try {
+        const data = await operatorPost('/api/operator/run-checks', {});
+        if (data && data.ok) {
+          const c = data.checks || {};
+          const msg = `Verification ${data.gate_status}: lint=${c.lint_ok}, tests=${c.tests_ok} (${c.tests_run || 0}), secrets=${c.secrets_found ?? '?'}.`;
+          setFeedback(msg, Boolean(c.lint_ok && c.tests_ok && c.sec_ok));
+          await fetchStatus();
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = prevText;
+      }
     });
 
     document.getElementById('approveBtn').addEventListener('click', async () => {

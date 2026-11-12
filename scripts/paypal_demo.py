@@ -10,6 +10,7 @@ _root = Path(__file__).resolve().parent.parent
 if str(_root) not in sys.path:
     sys.path.insert(0, str(_root))
 
+from integrations.env import load_dotenv
 from integrations.paypal import PayPalSandboxClient, PayPalWorkflowError
 
 
@@ -40,6 +41,7 @@ def main(argv: list[str] | None = None) -> int:
     capture.add_argument("--results-dir", type=Path, default=Path("results"))
 
     args = parser.parse_args(argv)
+    load_dotenv(_root)
     client = PayPalSandboxClient()
     try:
         if args.action == "create-order":

@@ -103,12 +103,15 @@ def verify_o3ai_gate(results_dir: Path) -> dict[str, Any]:
         raise PayPalWorkflowError("O3AI gate blocked: human approval has not passed.")
 
     recorded_timestamps = approval_evidence.get("stage_timestamps")
-    if isinstance(recorded_timestamps, dict):
-        for stage in REQUIRED_TOWER_STAGES:
-            if recorded_timestamps.get(stage) != floor_timestamps.get(stage):
-                raise PayPalWorkflowError(
-                    f"O3AI gate blocked: {stage} evidence changed after approval; re-approval required."
-                )
+    if not isinstance(recorded_timestamps, dict):
+        raise PayPalWorkflowError(
+            "O3AI gate blocked: human approval is missing stage_timestamps; re-approval required."
+        )
+    for stage in REQUIRED_TOWER_STAGES:
+        if not recorded_timestamps.get(stage) or recorded_timestamps.get(stage) != floor_timestamps.get(stage):
+            raise PayPalWorkflowError(
+                f"O3AI gate blocked: {stage} evidence changed after approval; re-approval required."
+            )
 
     return {
         "tower_stages": list(REQUIRED_TOWER_STAGES),

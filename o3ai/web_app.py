@@ -12,6 +12,8 @@ import json
 import os
 import re
 import secrets
+import subprocess
+import sys
 from datetime import datetime, timezone
 from http import cookies
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -30,8 +32,12 @@ from integrations.paypal import (
     verify_o3ai_gate,
 )
 from o3ai.evidence import derive_all_floor_statuses, get_floor_checklist
-from o3ai.models import StageStatus
+from o3ai.models import GitLabIssue, StageStatus
+from o3ai.planner_agent import run_planner_agent
+from o3ai.report import generate_reports
 from o3ai.security import SecurityValidationError, assert_safe_path, sanitize_untrusted_text
+from o3ai.session import create_goal_session
+from o3ai.tower import WorkingTower
 
 WORKSPACE = Path(__file__).resolve().parent.parent
 WEB_DIR = WORKSPACE / "web"
@@ -168,12 +174,16 @@ def _collect_approval_state(
     raw_status = str(approval.get("status", "PENDING")).upper()
     verification_passed = ev_dict.get("verification_passed") is True
     recorded_ts = ev_dict.get("stage_timestamps")
-    stale = False
-    if isinstance(recorded_ts, dict):
-        stale = any(recorded_ts.get(stage) != floor_timestamps.get(stage) for stage in REQUIRED_TOWER_STAGES)
+    missing_or_mismatched_ts = (
+        not isinstance(recorded_ts, dict)
+        or any(not recorded_ts.get(stage) or recorded_ts.get(stage) != floor_timestamps.get(stage) for stage in REQUIRED_TOWER_STAGES)
+    )
+    stale = raw_status == "PASS" and verification_passed and missing_or_mismatched_ts
 
     if stale:
-        blocked_reasons.append("Operator approval is stale because floor evidence changed; re-approval required.")
+        blocked_reasons.append(
+            "Operator approval is missing valid stage_timestamps or floor evidence changed; re-approval required."
+        )
         effective_status = "STALE"
     elif raw_status == "PASS" and verification_passed:
         effective_status = "PASS"
@@ -368,6 +378,70 @@ def _header_get(headers: dict[str, str], name: str, default: str = "") -> str:
     return default
 
 
+def _run_real_workspace_checks(results_dir: Path, issue: GitLabIssue) -> dict[str, Any]:
+    """Run real deterministic O3AI verification stages and record floor evidence."""
+    workspace_root = results_dir.parent
+    results_dir.mkdir(parents=True, exist_ok=True)
+
+    run_planner_agent(issue, workspace_root)
+
+    lint_proc = subprocess.run(
+        [sys.executable, str(workspace_root / "scripts" / "lint.py")],
+        cwd=workspace_root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    test_proc = subprocess.run(
+        [sys.executable, str(workspace_root / "scripts" / "test_runner.py")],
+        cwd=workspace_root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    sec_proc = subprocess.run(
+        [sys.executable, str(workspace_root / "scripts" / "security_check.py")],
+        cwd=workspace_root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    lint_ok = lint_proc.returncode == 0
+    tests_ok = test_proc.returncode == 0
+    sec_ok = sec_proc.returncode == 0
+    test_doc = _read_json_safe(results_dir / "test.json") or {}
+    test_ev = test_doc.get("evidence") if isinstance(test_doc.get("evidence"), dict) else {}
+    sec_doc = _read_json_safe(results_dir / "security.json") or {}
+    sec_ev = sec_doc.get("evidence") if isinstance(sec_doc.get("evidence"), dict) else {}
+    secrets_found = int(sec_ev.get("secrets_found", 0 if sec_ok else 1))
+
+    tower = WorkingTower(results_dir)
+    tower.run_builder(
+        target_files=["sample_app/signup.py", "o3ai/", "integrations/", "web/"],
+        build_exit_code=0 if (lint_ok and tests_ok) else 1,
+    )
+
+    if lint_ok and tests_ok:
+        tower.run_security_qa(
+            secrets_found=secrets_found,
+            tests_passed=tests_ok and sec_ok,
+        )
+        if sec_ok and secrets_found == 0:
+            session_doc = _read_json_safe(results_dir / "session.json") or {}
+            session_id = str(session_doc.get("session_id") or f"issue-{issue.issue_id}")
+            tower.run_release_monitor(version=session_id, rollback_defined=True)
+
+    generate_reports(results_dir)
+    return {
+        "lint_ok": lint_ok,
+        "tests_ok": tests_ok,
+        "tests_run": test_ev.get("tests_run", 0),
+        "sec_ok": sec_ok,
+        "secrets_found": secrets_found,
+    }
+
+
 class O3AIWebApp:
     """Stateful handler coordinator for O3AI local/authenticated web routes."""
 
@@ -378,12 +452,14 @@ class O3AIWebApp:
         operator_token: str | None = None,
         paypal_client_factory: Callable[[], PayPalSandboxClient] = PayPalSandboxClient,
         ai_planner_fn: Callable[[str, Path], dict[str, Any]] = create_ai_plan,
+        checks_runner_fn: Callable[[Path, GitLabIssue], dict[str, Any]] = _run_real_workspace_checks,
     ) -> None:
         self.results_dir = results_dir.resolve()
         self.web_dir = web_dir.resolve()
         self.operator_token = operator_token or os.environ.get("O3AI_OPERATOR_TOKEN") or secrets.token_urlsafe(24)
         self.paypal_client_factory = paypal_client_factory
         self.ai_planner_fn = ai_planner_fn
+        self.checks_runner_fn = checks_runner_fn
         self.sessions: dict[str, dict[str, str]] = {}
 
     def create_session(self) -> tuple[str, str]:
@@ -595,6 +671,10 @@ class O3AIWebApp:
         if not authorized:
             return self._json_response(auth_code, {"ok": False, "error": auth_msg})
 
+        if path == "/api/operator/init-session":
+            return self._handle_init_session(payload)
+        if path == "/api/operator/run-checks":
+            return self._handle_run_checks()
         if path == "/api/operator/milestone":
             return self._handle_milestone(payload)
         if path == "/api/operator/approve":
@@ -608,6 +688,113 @@ class O3AIWebApp:
         if path == "/api/operator/ai-plan":
             return self._handle_ai_plan(payload)
         return self._json_response(404, {"ok": False, "error": "Endpoint not found."})
+
+    def _handle_init_session(self, payload: dict[str, Any]) -> tuple[int, list[tuple[str, str]], bytes]:
+        cap_doc = _read_json_safe(self.results_dir / "paypal_capture.json")
+        if cap_doc and cap_doc.get("status") == "PASS" and payload.get("force_reset") is not True:
+            return self._json_response(
+                409,
+                {"ok": False, "error": "Payment capture already completed. Pass force_reset=true to start a new Goal Session."},
+            )
+
+        title = str(payload.get("title") or "").strip()
+        description = str(payload.get("description") or "").strip()
+        try:
+            raw_issue_id = int(payload.get("issue_id", 101))
+        except (TypeError, ValueError):
+            return self._json_response(400, {"ok": False, "error": "issue_id must be a positive integer."})
+        if raw_issue_id <= 0:
+            return self._json_response(400, {"ok": False, "error": "issue_id must be a positive integer."})
+
+        milestone_updates: dict[str, str] | None = None
+        if payload.get("amount") is not None or payload.get("currency") is not None:
+            try:
+                currency = str(payload.get("currency") or "USD").strip()
+                amount = _validate_amount(str(payload.get("amount", "")), currency)
+                ms_desc = _validate_description(str(payload.get("milestone_description") or title))
+            except PayPalWorkflowError as exc:
+                return self._json_response(400, {"ok": False, "error": str(exc)})
+            milestone_updates = {"title": ms_desc, "description": ms_desc, "amount": amount, "currency": currency}
+
+        issue = GitLabIssue(
+            issue_id=raw_issue_id,
+            title=title,
+            description=description,
+            author="developer_operator",
+            labels=["goal-session"],
+        )
+        workspace_root = self.results_dir.parent
+        try:
+            session = create_goal_session(issue, workspace_root)
+        except (SecurityValidationError, ValueError) as exc:
+            return self._json_response(400, {"ok": False, "error": str(exc)})
+
+        for stale_name in (
+            "planner.json",
+            "planner.md",
+            "builder.json",
+            "security_qa.json",
+            "release_monitor.json",
+            "approve.json",
+            "paypal_order.json",
+            "paypal_capture.json",
+            "tower_report.json",
+            "validate.json",
+            "test.json",
+            "security.json",
+            "ai_plan.json",
+        ):
+            stale_path = assert_safe_path(self.results_dir / stale_name, self.results_dir)
+            if stale_path.is_file():
+                stale_path.unlink()
+
+        if milestone_updates is not None:
+            _write_json_safe(
+                self.results_dir,
+                "milestone.json",
+                {
+                    **milestone_updates,
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                },
+            )
+
+        _append_activity(
+            self.results_dir,
+            "goal_session_created",
+            "developer_operator",
+            "PASS",
+            {"session_id": session.session_id, "issue_id": raw_issue_id, "title": session.issue.title},
+        )
+        return self._json_response(
+            200,
+            {"ok": True, "session": session.to_dict(), "message": "Bounded Goal Session initialized. Run verification checks next."},
+        )
+
+    def _handle_run_checks(self) -> tuple[int, list[tuple[str, str]], bytes]:
+        session_doc = _read_json_safe(self.results_dir / "session.json")
+        if not session_doc or not isinstance(session_doc.get("issue"), dict):
+            return self._json_response(409, {"ok": False, "error": "Create a Goal Session before running verification checks."})
+
+        issue = GitLabIssue.from_dict(session_doc["issue"])
+        try:
+            summary = self.checks_runner_fn(self.results_dir, issue)
+        except Exception as exc:
+            _append_activity(self.results_dir, "verification_checks_error", "developer_operator", "FAIL", {"reason": str(exc)})
+            return self._json_response(500, {"ok": False, "error": f"Verification run failed: {exc}"})
+
+        status_payload = build_status_payload(self.results_dir)
+        overall_passed = bool(summary.get("lint_ok") and summary.get("tests_ok") and summary.get("sec_ok"))
+        _append_activity(
+            self.results_dir,
+            "verification_checks_run",
+            "developer_operator",
+            "PASS" if overall_passed else "FAIL",
+            summary,
+        )
+        return self._json_response(
+            200,
+            {"ok": True, "checks": summary, "gate_status": status_payload["status"], "stages": status_payload["stages"]},
+        )
 
     def _handle_milestone(self, payload: dict[str, Any]) -> tuple[int, list[tuple[str, str]], bytes]:
         try:
@@ -802,6 +989,12 @@ def create_server(host: str = "127.0.0.1", port: int = 8080, app: O3AIWebApp | N
 
 
 def main() -> int:
+    try:
+        from integrations.env import load_dotenv
+
+        load_dotenv(WORKSPACE)
+    except ImportError:
+        pass
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     host = os.environ.get("O3AI_UI_HOST", "127.0.0.1").strip() or "127.0.0.1"
     port = int(os.environ.get("O3AI_UI_PORT", "8080"))

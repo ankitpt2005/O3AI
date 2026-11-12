@@ -18,7 +18,7 @@ from integrations.paypal import (
 
 
 class GateTests(unittest.TestCase):
-    def make_gate(self, root: Path, *, with_timestamps: bool = False) -> None:
+    def make_gate(self, root: Path, *, with_timestamps: bool = True) -> None:
         fixtures = {
             "planner": {"is_dag": True, "tasks": [{"task_id": "one"}], "task_count": 1},
             "builder": {"target_files": ["app.py"], "exit_code": 0},
@@ -91,6 +91,14 @@ class GateTests(unittest.TestCase):
                 with self.assertRaises(PayPalWorkflowError):
                     client.create_order(root, "10.00", "USD", "Milestone")
                 request.assert_not_called()
+
+    def test_missing_stage_timestamps_blocks_gate(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.make_gate(root, with_timestamps=False)
+            with self.assertRaises(PayPalWorkflowError) as ctx:
+                verify_o3ai_gate(root)
+            self.assertIn("stage_timestamps", str(ctx.exception))
 
     def test_amount_and_currency_validation(self):
         self.assertEqual(_validate_amount("12", "USD"), "12.00")
